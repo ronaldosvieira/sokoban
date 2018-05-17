@@ -16,7 +16,12 @@ class State:
         return self.neighbors
         
     def __eq__(self, other):
-        pass # to do (ignore player if None)
+        if self.boxes != other.boxes:
+            return False
+        
+        #if player and search(instance, self, BestFirstFringe(ManhattanDistanceHeuristic(other))):
+        
+        return True
         
     def __str__(self):
         return "{b: %s, p: %s}" % (list(map(str, self.boxes)), self.player)
