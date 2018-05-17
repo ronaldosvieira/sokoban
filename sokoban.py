@@ -73,7 +73,7 @@ class Instance:
         return [] # to do
         
     def is_goal(self, state):
-        pass
+        return state == self.goal
 
 def main():
     raw_data = sys.argv
