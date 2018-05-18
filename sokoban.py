@@ -1,6 +1,73 @@
 import sys, search
 
-class State:
+class GridSearchState:
+    def __init__(self, instance, x, y):
+        self.instance = instance
+        self.x, self.y = x, y
+        
+        self.hash_val = None
+        self.neighbors = None
+        
+    def get_neighbors(self):
+        if self.neighbors is None:
+            self.neighbors = self.instance.generate_neighbors(self)
+            
+        return self.neighbors
+        
+    def __str__(self):
+        return "(%d, %d)" % (self.x, self.y)
+        
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+        
+    def __hash__(self):
+        if self.hash_val is None:
+            self.hash_val = self.x + self.y * len(self.instance.grid[0])
+            
+        return self.hash_val
+
+class GridSearchInstance:
+    def __init__(self, grid, goal):
+        self.grid = grid
+        self.states = {}
+        self.goal = GridSearchState(self, goal[0], goal[1])
+        
+    def __is_blocked(self, x, y):
+        try:
+            return self.grid[y][x] in ['@', 'b', 'B']
+        except IndexError:
+            return True
+        
+    def generate_neighbors(self, state):
+        neighbors = []
+        x, y = state.x, state.y
+        
+        for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            if not self.__is_blocked(x + dx, y + dy):
+                try:
+                    neighbor = self.states[(x + dx, y + dy)]
+                except:
+                    neighbor = GridSearchState(self, x + dx, y + dy)
+                    self.states[(x + dx, y + dx)] = neighbor
+                    
+                neighbors.append((neighbor, 1))
+                
+        return neighbors
+        
+    def is_goal(self, state):
+        return state == self.goal
+
+class ManhattanDistanceHeuristic:
+    def __init__(self, goal):
+        self.goal = goal
+    
+    def get(self, node):
+        dx = abs(node.state.x - self.goal.x)
+        dy = abs(node.state.y - self.goal.y)
+        
+        return dx + dy
+
+class GameState:
     def __init__(self, instance, boxes, player):
         self.instance = instance
         self.boxes = boxes
@@ -33,7 +100,7 @@ class State:
             
         return self.hash_val
 
-class Instance:
+class GameInstance:
     def __init__(self, width, height, grid):
         self.grid = list(map(list, grid))
         self.width, self.height = width, height
@@ -67,13 +134,13 @@ class Instance:
                 elif grid[y][x] in ['o', 'O']:
                     player = (x, y)
                     
-        state = State(self, boxes, player)
+        state = GameState(self, boxes, player)
         
         self.states[state] = state
         
         return state
         
-    def __get_grid_from_state(self, state):
+    def get_grid_from_state(self, state):
         new_grid = list(map(list, self.empty_grid))
         
         swap_box = {'.': 'B', ' ': 'b', 'o': 'b', 'O': 'B', 'B': 'B', 'b': 'b'}
@@ -98,18 +165,26 @@ class Instance:
         try:
             return grid[y][x] in ['@', 'b', 'B']
         except IndexError:
-            return False
+            return True
         
     def generate_neighbors(self, state):
         neighbors = []
         
-        current_grid = self.__get_grid_from_state(state)
+        current_grid = self.get_grid_from_state(state)
         
         for i, (x, y) in enumerate(state.boxes):
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                # test if player has a path
                 player_blocked = self.__is_blocked(current_grid, x + (2 * dx), y + (2 * dy))
                 player_blocked = player_blocked or (x + (2 * dx), y + (2 * dy)) in state.boxes
+                
+                if state.player:
+                    path_search = GridSearchInstance(current_grid, state.player)
+                    path_search_start = GridSearchState(path_search, x + (2 * dx), y + (2 * dy))
+                    
+                    try:
+                        search.search(path_search, path_search_start, search.AStarFringe(ManhattanDistanceHeuristic(path_search_start)))
+                    except search.SolutionNotFoundError:
+                        player_blocked = True
                 
                 box_blocked = self.__is_blocked(current_grid, x + dx, y + dy)
                 box_blocked = box_blocked or (x + dx, y + dy) in state.boxes
@@ -120,7 +195,7 @@ class Instance:
                     try:
                         neighbor = self.states[sum((x + dx) + (y + dy) * self.width for x, y in new_boxes)]
                     except:
-                        neighbor = State(self, new_boxes, (x + (2 * dx), y + (2 * dy)))
+                        neighbor = GameState(self, new_boxes, (x + (2 * dx), y + (2 * dy)))
                         self.states[neighbor] = neighbor
                         
                     # unitary cost
@@ -146,7 +221,7 @@ def main():
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
 
-    instance = Instance(width, height, grid)
+    instance = GameInstance(width, height, grid)
     
     try:
         solution = search.search(instance, instance.start, search.BreadthFirstFringe())

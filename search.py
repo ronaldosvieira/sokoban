@@ -256,7 +256,7 @@ class AStarFringe(Fringe):
             heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
 
 def search(instance, start, fringe):
-    fringe.init([Node(instance.start)])
+    fringe.init([Node(start)])
     
     while fringe:
         current = fringe.pop()
