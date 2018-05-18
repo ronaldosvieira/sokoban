@@ -134,6 +134,28 @@ class UniformCostFringe(Fringe):
         for node in nodes:
             heapq.heappush(self.open_list, (node.cost, node))
 
+class DepthFirstFringe(Fringe):
+    def __init__(self):
+        super().__init__()
+        self.open_list = []
+        
+    def __str__(self):
+        return str(list(map(str, self.open_list)))
+        
+    def __len__(self):
+        return len(self.open_list)
+        
+    def init(self, nodes):
+        super().init(nodes)
+        self.open_list = [] + nodes
+        
+    def pop(self):
+        return self.open_list.pop()
+        
+    def extend(self, nodes):
+        super().extend(nodes)
+        self.open_list.extend(nodes)
+
 class LimitedDepthFirstFringe(Fringe):
     def __init__(self, limit):
         super().__init__()
