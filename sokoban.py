@@ -69,8 +69,30 @@ class Instance:
         
         return state
         
+    def __is_blocked(self, x, y):
+        try:
+            return self.reversed_grid[y][x] in ['@', 'b', 'B']
+        except IndexError:
+            return False
+        
     def generate_neighbors(self, state):
-        return [] # to do
+        neighbors = []
+        
+        for i, (x, y) in enumerate(state.boxes):
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                # test if player has a path
+                if not self.__is_blocked(x + (2 * dx), y + (2 * dy)) and not self.__is_blocked(x + dx, y + dy):
+                    new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
+                    
+                    try:
+                        neighbor = self.states[sum(x + y * self.width for x, y in new_boxes)]
+                    except:
+                        neighbor = State(self, new_boxes, (x, y))
+                        self.states[neighbor] = neighbor
+                        
+                    neighbors.append(neighbor)
+                    
+        return neighbors
         
     def is_goal(self, state):
         return state == self.goal
