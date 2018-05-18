@@ -16,8 +16,9 @@ class State:
         return self.neighbors
         
     def __eq__(self, other):
-        if self.boxes != other.boxes:
-            return False
+        for box in self.boxes:
+            if not box in other.boxes:
+                return False
         
         #if player and search(instance, self, BestFirstFringe(ManhattanDistanceHeuristic(other))):
         
