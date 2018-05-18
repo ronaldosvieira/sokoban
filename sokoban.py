@@ -153,11 +153,12 @@ def main():
     
         for step in solution:
             print(step.state)
-        
-        print(len(solution.info["nodes_generated"]))
+            
+        print("solution length:", solution[-1].depth)
+        print(len(solution.info["nodes_generated"]), "nodes generated")
     except search.SolutionNotFoundError as e:
         print("no solution")
-        print(len(e.fringe.nodes_generated))
+        print(len(e.fringe.nodes_generated), "nodes generated")
 
 if __name__ == '__main__':
     main()
