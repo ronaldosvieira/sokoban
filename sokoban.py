@@ -50,7 +50,6 @@ class Instance:
                 
                 self.empty_grid[y][x] = ' ' if self.empty_grid[y][x] != '@' else '@'
                 
-                
         self.states = {}
                 
         self.start = self.__get_state_from_grid(self.reversed_grid)
@@ -77,7 +76,7 @@ class Instance:
         new_grid = list(map(list, self.empty_grid))
         
         swap_box = {'.': 'B', ' ': 'b', 'o': 'b', 'O': 'B', 'B': 'B', 'b': 'b'}
-        swap_player = {'.': 'O', ' ': 'o', 'o': 'o', 'O': 'O', 'B': 'O', 'b': 'o'}
+        swap_player = {'.': 'O', ' ': 'o', 'o': 'o', 'O': 'O'}
         
         for x, y in state.boxes:
             try:
@@ -86,7 +85,11 @@ class Instance:
                 raise ValueError("invalid state")
                 
         if state.player:
-            new_grid[y][x] = swap_player[new_grid[y][x]]
+            x, y = state.player
+            try:
+                new_grid[y][x] = swap_player[new_grid[y][x]]
+            except:
+                raise ValueError("invalid state")
         
         return new_grid
         
@@ -105,15 +108,18 @@ class Instance:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 # test if player has a path
                 player_blocked = self.__is_blocked(current_grid, x + (2 * dx), y + (2 * dy))
+                player_blocked = player_blocked or (x + (2 * dx), y + (2 * dy)) in state.boxes
+                
                 box_blocked = self.__is_blocked(current_grid, x + dx, y + dy)
+                box_blocked = box_blocked or (x + dx, y + dy) in state.boxes
                 
                 if not player_blocked and not box_blocked:
                     new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
                     
                     try:
-                        neighbor = self.states[sum(x + y * self.width for x, y in new_boxes)]
+                        neighbor = self.states[sum((x + dx) + (y + dy) * self.width for x, y in new_boxes)]
                     except:
-                        neighbor = State(self, new_boxes, (x, y))
+                        neighbor = State(self, new_boxes, (x + (2 * dx), y + (2 * dy)))
                         self.states[neighbor] = neighbor
                         
                     # unitary cost
