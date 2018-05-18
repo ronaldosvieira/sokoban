@@ -1,4 +1,4 @@
-import sys
+import sys, search
 
 class State:
     def __init__(self, instance, boxes, player):
@@ -39,6 +39,7 @@ class Instance:
         
         swap = {'.': 'b', 'b': '.', 'O': 'b', 'o': ' ',}
         self.reversed_grid = list(map(list, grid))
+        self.empty_grid = list(map(list, grid))
         
         for y in range(0, height):
             for x in range(0, width):
@@ -46,6 +47,9 @@ class Instance:
                     self.reversed_grid[y][x] = swap[self.reversed_grid[y][x]]
                 except:
                     pass
+                
+                self.empty_grid[y][x] = ' ' if self.empty_grid[y][x] != '@' else '@'
+                
                 
         self.states = {}
                 
@@ -69,19 +73,41 @@ class Instance:
         
         return state
         
-    def __is_blocked(self, x, y):
+    def __get_grid_from_state(self, state):
+        new_grid = list(map(list, self.empty_grid))
+        
+        swap_box = {'.': 'B', ' ': 'b', 'o': 'b', 'O': 'B', 'B': 'B', 'b': 'b'}
+        swap_player = {'.': 'O', ' ': 'o', 'o': 'o', 'O': 'O', 'B': 'O', 'b': 'o'}
+        
+        for x, y in state.boxes:
+            try:
+                new_grid[y][x] = swap_box[new_grid[y][x]]
+            except:
+                raise ValueError("invalid state")
+                
+        if state.player:
+            new_grid[y][x] = swap_player[new_grid[y][x]]
+        
+        return new_grid
+        
+    def __is_blocked(self, grid, x, y):
         try:
-            return self.reversed_grid[y][x] in ['@', 'b', 'B']
+            return grid[y][x] in ['@', 'b', 'B']
         except IndexError:
             return False
         
     def generate_neighbors(self, state):
         neighbors = []
         
+        current_grid = self.__get_grid_from_state(state)
+        
         for i, (x, y) in enumerate(state.boxes):
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 # test if player has a path
-                if not self.__is_blocked(x + (2 * dx), y + (2 * dy)) and not self.__is_blocked(x + dx, y + dy):
+                player_blocked = self.__is_blocked(current_grid, x + (2 * dx), y + (2 * dy))
+                box_blocked = self.__is_blocked(current_grid, x + dx, y + dy)
+                
+                if not player_blocked and not box_blocked:
                     new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
                     
                     try:
@@ -90,7 +116,8 @@ class Instance:
                         neighbor = State(self, new_boxes, (x, y))
                         self.states[neighbor] = neighbor
                         
-                    neighbors.append(neighbor)
+                    # unitary cost
+                    neighbors.append((neighbor, 1))
                     
         return neighbors
         
@@ -113,6 +140,17 @@ def main():
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
 
     instance = Instance(width, height, grid)
+    
+    try:
+        solution = search.search(instance, instance.start, search.BreadthFirstFringe())
+    
+        for step in solution:
+            print(step.state)
+        
+        print(len(solution.info["nodes_generated"]))
+    except search.SolutionNotFoundError as e:
+        print("no solution")
+        print(len(e.fringe.nodes_generated))
 
 if __name__ == '__main__':
     main()
