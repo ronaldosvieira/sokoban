@@ -44,11 +44,12 @@ class GridSearchInstance:
         
         for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
             if not self.__is_blocked(x + dx, y + dy):
+                neighbor = GridSearchState(self, x + dx, y + dy)
+                
                 try:
-                    neighbor = self.states[(x + dx, y + dy)]
+                    neighbor = self.states[neighbor]
                 except:
-                    neighbor = GridSearchState(self, x + dx, y + dy)
-                    self.states[(x + dx, y + dx)] = neighbor
+                    self.states[neighbor] = neighbor
                     
                 neighbors.append((neighbor, 1))
                 
@@ -62,8 +63,8 @@ class ManhattanDistanceHeuristic:
         self.goal = goal
     
     def get(self, node):
-        dx = abs(node.state.x - self.goal.x)
-        dy = abs(node.state.y - self.goal.y)
+        dx = abs(node.state.x - self.goal[0])
+        dy = abs(node.state.y - self.goal[1])
         
         return dx + dy
 
@@ -87,7 +88,16 @@ class GameState:
             if not box in other.boxes:
                 return False
         
-        #if player and search(instance, self, BestFirstFringe(ManhattanDistanceHeuristic(other))):
+        if self.player and other.player:
+            current_grid = self.instance.get_grid_from_state(self)
+            
+            path_search = GridSearchInstance(current_grid, self.player)
+            path_search_start = GridSearchState(path_search, other.player[0], other.player[1])
+            
+            try:
+                search.search(path_search, path_search_start, search.AStarFringe(ManhattanDistanceHeuristic(self.player)))
+            except search.SolutionNotFoundError:
+                return False
         
         return True
         
@@ -96,7 +106,8 @@ class GameState:
         
     def __hash__(self):
         if self.hash_val is None:
-            self.hash_val = sum(x + y * self.instance.width for x, y in self.boxes)
+            #self.hash_val = sum(x + y * self.instance.width for x, y in self.boxes)
+            self.hash_val = hash((((x, y) for x, y in self.boxes), self.player))
             
         return self.hash_val
 
@@ -174,32 +185,36 @@ class GameInstance:
         
         for i, (x, y) in enumerate(state.boxes):
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                player_blocked = self.__is_blocked(current_grid, x + (2 * dx), y + (2 * dy))
-                player_blocked = player_blocked or (x + (2 * dx), y + (2 * dy)) in state.boxes
+                player_pos = (x + (2 * dx), y + (2 * dy))
+                box_pos = (x + dx, y + dy)
                 
+                player_blocked = self.__is_blocked(current_grid, *player_pos)
+                box_blocked = self.__is_blocked(current_grid, *box_pos)
+                
+                if player_blocked or box_blocked:
+                    continue
+
                 if state.player:
                     path_search = GridSearchInstance(current_grid, state.player)
-                    path_search_start = GridSearchState(path_search, x + (2 * dx), y + (2 * dy))
+                    path_search_start = GridSearchState(path_search, *player_pos)
                     
                     try:
-                        search.search(path_search, path_search_start, search.AStarFringe(ManhattanDistanceHeuristic(path_search_start)))
+                        search.search(path_search, 
+                                path_search_start, 
+                                search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
                     except search.SolutionNotFoundError:
-                        player_blocked = True
+                        continue
                 
-                box_blocked = self.__is_blocked(current_grid, x + dx, y + dy)
-                box_blocked = box_blocked or (x + dx, y + dy) in state.boxes
-                
-                if not player_blocked and not box_blocked:
-                    new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
+                new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
                     
-                    try:
-                        neighbor = self.states[sum((x + dx) + (y + dy) * self.width for x, y in new_boxes)]
-                    except:
-                        neighbor = GameState(self, new_boxes, (x + (2 * dx), y + (2 * dy)))
-                        self.states[neighbor] = neighbor
-                        
-                    # unitary cost
-                    neighbors.append((neighbor, 1))
+                neighbor = GameState(self, new_boxes, player_pos)
+                
+                try:
+                    neighbor = self.states[neighbor]
+                except:
+                    self.states[neighbor] = neighbor
+                    
+                neighbors.append((neighbor, 1))
                     
         return neighbors
         

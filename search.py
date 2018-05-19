@@ -261,8 +261,6 @@ def search(instance, start, fringe):
     while fringe:
         current = fringe.pop()
         
-        print("current:", current)
-        
         if instance.is_goal(current.state):
             return Solution(current, fringe, fringe.visited)
             
@@ -275,9 +273,6 @@ def search(instance, start, fringe):
                                 current.state.get_neighbors())
             successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)
             successors = list(successors)
-            
-            print("successors:", list(map(str, successors)))
-            print()
             
             for node in successors:
                 fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
