@@ -244,7 +244,7 @@ def main():
         for step in solution:
             print(step.state)
             
-        print("solution length:", solution[-1].depth)
+        print("solution length:", len(solution))
         print(len(solution.info["nodes_generated"]), "nodes generated")
     except search.SolutionNotFoundError as e:
         print("no solution")

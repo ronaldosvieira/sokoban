@@ -34,6 +34,9 @@ class Solution:
             
         self.steps.reverse()
         
+    def __len__(self):
+        return len(self.steps)
+        
     def __getitem__(self, key):
         return self.steps[key]
             
