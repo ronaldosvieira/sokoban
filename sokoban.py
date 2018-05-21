@@ -130,6 +130,7 @@ class GameInstance:
                 self.empty_grid[y][x] = ' ' if self.empty_grid[y][x] != '@' else '@'
                 
         self.states = {}
+        self.grids = {}
                 
         self.start = self.__get_state_from_grid(self.reversed_grid)
         self.goal = self.__get_state_from_grid(self.grid)
@@ -152,25 +153,30 @@ class GameInstance:
         return state
         
     def get_grid_from_state(self, state):
-        new_grid = list(map(list, self.empty_grid))
-        
-        swap_box = {'.': 'B', ' ': 'b', 'o': 'b', 'O': 'B', 'B': 'B', 'b': 'b'}
-        swap_player = {'.': 'O', ' ': 'o', 'o': 'o', 'O': 'O'}
-        
-        for x, y in state.boxes:
-            try:
-                new_grid[y][x] = swap_box[new_grid[y][x]]
-            except:
-                raise ValueError("invalid state")
-                
-        if state.player:
-            x, y = state.player
-            try:
-                new_grid[y][x] = swap_player[new_grid[y][x]]
-            except:
-                raise ValueError("invalid state")
-        
-        return new_grid
+        try:
+            return self.grids[state]
+        except:
+            new_grid = list(map(list, self.empty_grid))
+            
+            swap_box = {'.': 'B', ' ': 'b', 'o': 'b', 'O': 'B', 'B': 'B', 'b': 'b'}
+            swap_player = {'.': 'O', ' ': 'o', 'o': 'o', 'O': 'O'}
+            
+            for x, y in state.boxes:
+                try:
+                    new_grid[y][x] = swap_box[new_grid[y][x]]
+                except:
+                    raise ValueError("invalid state")
+                    
+            if state.player:
+                x, y = state.player
+                try:
+                    new_grid[y][x] = swap_player[new_grid[y][x]]
+                except:
+                    raise ValueError("invalid state")
+                    
+            self.grids[state] = new_grid
+            
+            return self.grids[state]
         
     def __is_blocked(self, grid, x, y):
         try:
