@@ -193,28 +193,32 @@ class GameInstance:
                 
                 if player_blocked or box_blocked:
                     continue
-
-                if state.player:
-                    path_search = GridSearchInstance(current_grid, state.player)
-                    path_search_start = GridSearchState(path_search, *player_pos)
-                    
-                    try:
-                        search.search(path_search, 
-                                path_search_start, 
-                                search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
-                    except search.SolutionNotFoundError:
-                        continue
                 
                 new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
                     
                 neighbor = GameState(self, new_boxes, player_pos)
+
+                cost = 1
+                
+                if state.player:
+                    neighbor_grid = self.get_grid_from_state(state)
+                    path_search = GridSearchInstance(neighbor_grid, state.player)
+                    path_search_start = GridSearchState(path_search, *box_pos)
+                    
+                    try:
+                        path = search.search(path_search, 
+                                path_search_start, 
+                                search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
+                        cost = path.info["cost"] + 1
+                    except search.SolutionNotFoundError:
+                        continue
                 
                 try:
                     neighbor = self.states[neighbor]
                 except:
                     self.states[neighbor] = neighbor
                     
-                neighbors.append((neighbor, 1))
+                neighbors.append((neighbor, cost))
                     
         return neighbors
         
@@ -239,12 +243,32 @@ def main():
     instance = GameInstance(width, height, grid)
     
     try:
-        solution = search.search(instance, instance.start, search.BreadthFirstFringe())
-    
-        for step in solution:
-            print(step.state)
+        solution = search.search(instance, instance.start, search.UniformCostFringe())
+        
+        for i in range(0, len(solution)):
+            print(solution[i].state, solution[i].cost)
+            
+            if i < len(solution) - 1:
+                box = list(set(solution[i + 1].state.boxes) - set(solution[i].state.boxes))[0]
+                interm_state = GameState(instance, solution[i].state.boxes, box)
+                
+                #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(interm_state))))
+                print(interm_state)
+                #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(solution[i + 1].state))))
+        
+        current_grid = instance.get_grid_from_state(instance.goal)
+        
+        path_search = GridSearchInstance(current_grid, solution[-1].state.player)
+        path_search_start = GridSearchState(path_search, *instance.goal.player)
+        
+        path_to_start = search.search(path_search, 
+                path_search_start, 
+                search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
+                
+        cost = solution.info["cost"] + path_to_start.info["cost"]
             
         print("solution length:", len(solution))
+        print("solution cost:", cost)
         print(len(solution.info["nodes_generated"]), "nodes generated")
     except search.SolutionNotFoundError as e:
         print("no solution")
