@@ -72,6 +72,12 @@ class XStrategy:
     def __init__(self, instance, y_strategy):
         self.instance = instance
         self.y_strategy = y_strategy
+        self.goals = set()
+        
+        for y in range(0, len(self.instance.reversed_grid)):
+            for x in range(0, len(self.instance.reversed_grid[y])):
+                if self.instance.reversed_grid[y][x] in set(['.', 'B', 'O']):
+                    self.goals.add((x, y))
 
 class YStrategy:
     def __init__(self, goal):
@@ -98,7 +104,7 @@ class UntilPlaced(XStrategy):
         
         box = state.boxes[i]
         
-        if self.instance.reversed_grid[box[1]][box[0]] != '.':
+        if box not in self.goals:
             return [box]
         else:
             return self.y_strategy.next_box(state, grid)
