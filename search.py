@@ -272,6 +272,11 @@ def search(instance, start, fringe):
             
             fringe.best_cost[current.state] = current.cost
             
+            try:
+                instance.last_state = current.pred.state
+            except:
+                instance.last_state = None
+            
             successors = map(lambda s: Node(s[0], current, current.cost + s[1], current.depth + 1), 
                                 current.state.get_neighbors())
             successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)

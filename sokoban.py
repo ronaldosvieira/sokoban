@@ -134,6 +134,8 @@ class GameInstance:
                 
         self.start = self.__get_state_from_grid(self.reversed_grid)
         self.goal = self.__get_state_from_grid(self.grid)
+        
+        self.last_state = None
 
     def __get_state_from_grid(self, grid):
         boxes = []
@@ -225,7 +227,7 @@ class GameInstance:
                     self.states[neighbor] = neighbor
                     
                 neighbors.append((neighbor, cost))
-                    
+        
         return neighbors
         
     def is_goal(self, state):
