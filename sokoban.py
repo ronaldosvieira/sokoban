@@ -311,25 +311,11 @@ class GameInstance:
     def is_goal(self, state):
         return state == self.goal
 
-def main():
-    raw_data = sys.argv
-    
-    if len(raw_data) != 2:
-        print("usage: %s instance" % raw_data[0])
-        sys.exit(1)
-    
-    instance = raw_data[1]
-    
-    with open(instance, 'r') as file:
-        data = file.readlines()
-        
-    width, height = list(map(int, data[0].split()))
-    grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
-
-    instance = GameInstance(width, height, grid, until_k_steps_away(1), UnplacedBoxes)
+def solve(width, height, grid, search_strategy, x_strategy, y_strategy):
+    instance = GameInstance(width, height, grid, x_strategy, y_strategy)
     
     try:
-        solution = search.search(instance, instance.start, search.UniformCostFringe())
+        solution = search.search(instance, instance.start, search_strategy, True)
         
         for i in range(0, len(solution)):
             print(solution[i].state, solution[i].cost)
@@ -359,6 +345,23 @@ def main():
     except search.SolutionNotFoundError as e:
         print("no solution")
         print(len(e.fringe.nodes_generated), "nodes generated")
+
+def main():
+    raw_data = sys.argv
+    
+    if len(raw_data) != 2:
+        print("usage: %s instance" % raw_data[0])
+        sys.exit(1)
+    
+    instance = raw_data[1]
+    
+    with open(instance, 'r') as file:
+        data = file.readlines()
+        
+    width, height = list(map(int, data[0].split()))
+    grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
+
+    solve(width, height, grid, search.UniformCostFringe(), AfterEachStep, UnplacedBoxes)
 
 if __name__ == '__main__':
     main()
