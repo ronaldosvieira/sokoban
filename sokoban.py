@@ -314,54 +314,87 @@ class GameInstance:
 def solve(width, height, grid, search_strategy, x_strategy, y_strategy):
     instance = GameInstance(width, height, grid, x_strategy, y_strategy)
     
-    try:
-        solution = search.search(instance, instance.start, search_strategy, True)
+    solution = search.search(instance, instance.start, search_strategy, True)
+    
+    for i in range(0, len(solution)):
+        print(solution[i].state, solution[i].cost)
         
-        for i in range(0, len(solution)):
-            print(solution[i].state, solution[i].cost)
+        if i < len(solution) - 1:
+            box = list(set(solution[i + 1].state.boxes) - set(solution[i].state.boxes))[0]
+            interm_state = GameState(instance, solution[i].state.boxes, box)
             
-            if i < len(solution) - 1:
-                box = list(set(solution[i + 1].state.boxes) - set(solution[i].state.boxes))[0]
-                interm_state = GameState(instance, solution[i].state.boxes, box)
-                
-                #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(interm_state))))
-                print(interm_state)
-                #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(solution[i + 1].state))))
-        
-        current_grid = instance.get_grid_from_state(instance.goal)
-        
-        path_search = GridSearchInstance(current_grid, solution[-1].state.player)
-        path_search_start = GridSearchState(path_search, *instance.goal.player)
-        
-        path_to_start = search.search(path_search, 
-                path_search_start, 
-                search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
-                
-        cost = solution.info["cost"] + path_to_start.info["cost"]
+            #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(interm_state))))
+            print(interm_state)
+            #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(solution[i + 1].state))))
+    
+    current_grid = instance.get_grid_from_state(instance.goal)
+    
+    path_search = GridSearchInstance(current_grid, solution[-1].state.player)
+    path_search_start = GridSearchState(path_search, *instance.goal.player)
+    
+    path_to_start = search.search(path_search, 
+            path_search_start, 
+            search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
             
-        print("solution length:", len(solution))
-        print("solution cost:", cost)
-        print(len(solution.info["nodes_generated"]), "nodes generated")
-    except search.SolutionNotFoundError as e:
-        print("no solution")
-        print(len(e.fringe.nodes_generated), "nodes generated")
+    solution.info["cost"] += path_to_start.info["cost"]
+    
+    return solution
 
 def main():
     raw_data = sys.argv
     
-    if len(raw_data) != 2:
-        print("usage: %s instance" % raw_data[0])
+    if len(raw_data) not in (3, 4):
+        print("usage: %s instance strategy parameter?" % raw_data[0])
         sys.exit(1)
     
-    instance = raw_data[1]
+    instance, strategy = raw_data[1:3]
+    
+    try:
+        parameter = raw_data[3]
+    except:
+        parameter = None
     
     with open(instance, 'r') as file:
         data = file.readlines()
         
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
-
-    solve(width, height, grid, search.UniformCostFringe(), AfterEachStep, UnplacedBoxes)
+    
+    try:
+        if strategy == 'x1y1':
+            solution = solve(width, height, grid, search.UniformCostFringe(), AfterEachStep, AllBoxes)
+        elif strategy == 'x3x2':
+            solve(width, height, grid, search.UniformCostFringe(), UntilPlaced, UnplacedBoxes)
+        elif strategy == 'x4x2':
+            if parameter:
+                solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(parameter), UnplacedBoxes)
+            else:
+                limit = 2 * max(width, height)
+                k = 0
+                
+                while True:
+                    try:
+                        solution = solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(k), UnplacedBoxes)
+                    except search.SolutionNotFoundError as s:
+                        k += 1
+                        
+                        if k <= limit:
+                            continue
+                        else:
+                            raise s
+                    except KeyboardInterrupt as ki:
+                        print("x4x2 stopped at k = %d" % k)
+                        raise ki
+        else:
+            print("invalid strategy")
+            sys.exit(1)
+    
+        print("solution length:", len(solution))
+        print("solution cost:", solution.info["cost"])
+        print(len(solution.info["nodes_generated"]), "nodes generated")
+    except search.SolutionNotFoundError as e:
+        print("no solution")
+        print(len(e.fringe.nodes_generated), "nodes generated")
 
 if __name__ == '__main__':
     main()
