@@ -109,6 +109,33 @@ class UntilPlaced(XStrategy):
         else:
             return self.y_strategy.next_box(state, grid)
 
+def until_k_steps_away(k):
+    class UntilKStepsAway(XStrategy):
+        def get(self, last_state, state, grid):
+            if last_state is None:
+                return self.y_strategy.next_box(state, grid)
+            
+            i = 0
+            
+            while i < len(state.boxes):
+                if state.boxes[i] not in last_state.boxes:
+                    break
+                
+                i += 1
+            else:
+                return self.y_strategy.next_box(state, grid)
+            
+            box = state.boxes[i]
+            
+            distance = min([abs(box[0] - goal[0]) + abs(box[1] - goal[1]) for goal in self.goals])
+            
+            if distance > k:
+                return [box]
+            else:
+                return self.y_strategy.next_box(state, grid)
+    
+    return UntilKStepsAway
+
 class AllBoxes(YStrategy):
     def next_box(self, state, grid):
         return state.boxes
@@ -299,7 +326,7 @@ def main():
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
 
-    instance = GameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
+    instance = GameInstance(width, height, grid, until_k_steps_away(1), UnplacedBoxes)
     
     try:
         solution = search.search(instance, instance.start, search.UniformCostFringe())
