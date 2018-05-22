@@ -68,6 +68,49 @@ class ManhattanDistanceHeuristic:
         
         return dx + dy
 
+class XStrategy:
+    def __init__(self, instance, y_strategy):
+        self.instance = instance
+        self.y_strategy = y_strategy
+
+class YStrategy:
+    def __init__(self, goal):
+        self.goal = goal
+
+class AfterEachStep(XStrategy):
+    def get(self, last_state, state, grid):
+        return self.y_strategy.next_box(state, grid)
+
+class UntilPlaced(XStrategy):
+    def get(self, last_state, state, grid):
+        if last_state is None:
+            return self.y_strategy.next_box(state, grid)
+        
+        i = 0
+        
+        while i < len(state.boxes):
+            if state.boxes[i] not in last_state.boxes:
+                break
+            
+            i += 1
+        else:
+            return self.y_strategy.next_box(state, grid)
+        
+        box = state.boxes[i]
+        
+        if self.instance.reversed_grid[box[1]][box[0]] != '.':
+            return [box]
+        else:
+            return self.y_strategy.next_box(state, grid)
+
+class AllBoxes(YStrategy):
+    def next_box(self, state, grid):
+        return state.boxes
+        
+class UnplacedBoxes(YStrategy):
+    def next_box(self, state, grid):
+        return list(filter(lambda b: grid[b[1]][b[0]] != 'B', state.boxes))
+
 class GameState:
     def __init__(self, instance, boxes, player):
         self.instance = instance
@@ -112,7 +155,7 @@ class GameState:
         return self.hash_val
 
 class GameInstance:
-    def __init__(self, width, height, grid):
+    def __init__(self, width, height, grid, x_strategy = AfterEachStep, y_strategy = AllBoxes):
         self.grid = list(map(list, grid))
         self.width, self.height = width, height
         
@@ -136,6 +179,7 @@ class GameInstance:
         self.goal = self.__get_state_from_grid(self.grid)
         
         self.last_state = None
+        self.boxes_to_consider = x_strategy(self, y_strategy(self.goal))
 
     def __get_state_from_grid(self, grid):
         boxes = []
@@ -190,8 +234,9 @@ class GameInstance:
         neighbors = []
         
         current_grid = self.get_grid_from_state(state)
+        available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
         
-        for i, (x, y) in enumerate(state.boxes):
+        for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 player_pos = (x + (2 * dx), y + (2 * dy))
                 box_pos = (x + dx, y + dy)
@@ -202,7 +247,7 @@ class GameInstance:
                 if player_blocked or box_blocked:
                     continue
                 
-                new_boxes = [(x_j, y_j) if j != i else (x_j + dx, y_j + dy) for j, (x_j, y_j) in enumerate(state.boxes)]
+                new_boxes = [(x_j, y_j) if (x_j, y_j) != (x, y) else (x + dx, y_j + dy) for x_j, y_j in state.boxes]
                     
                 neighbor = GameState(self, new_boxes, player_pos)
 
@@ -248,7 +293,7 @@ def main():
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
 
-    instance = GameInstance(width, height, grid)
+    instance = GameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
     
     try:
         solution = search.search(instance, instance.start, search.UniformCostFringe())
