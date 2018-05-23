@@ -363,11 +363,11 @@ def main():
     try:
         if strategy == 'x1y1':
             solution = solve(width, height, grid, search.UniformCostFringe(), AfterEachStep, AllBoxes)
-        elif strategy == 'x3x2':
-            solve(width, height, grid, search.UniformCostFringe(), UntilPlaced, UnplacedBoxes)
-        elif strategy == 'x4x2':
+        elif strategy == 'x3y2':
+            solution = solve(width, height, grid, search.UniformCostFringe(), UntilPlaced, UnplacedBoxes)
+        elif strategy == 'x4y2':
             if parameter:
-                solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(parameter), UnplacedBoxes)
+                solution = solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(int(parameter)), UnplacedBoxes)
             else:
                 limit = 2 * max(width, height)
                 k = 0
