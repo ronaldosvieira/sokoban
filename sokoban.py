@@ -1,4 +1,4 @@
-import sys, search
+import sys, search, itertools
 
 class GridSearchState:
     def __init__(self, instance, x, y):
@@ -67,6 +67,37 @@ class ManhattanDistanceHeuristic:
         dy = abs(node.state.y - self.goal[1])
         
         return dx + dy
+        
+class MinMatchingHeuristic:
+    def __init__(self, goal):
+        self.goal = goal
+        
+    def _dist(self, first, second):
+        dx = abs(first[0] - second[0])
+        dy = abs(first[1] - second[1])
+        
+        return dx + dy
+        
+    def get(self, node):
+        boxes = list(node.state.boxes)
+        
+        dist_mat = [[self._dist(box, goal) for box in boxes] for goal in self.goal.boxes]
+        h_value = float("inf")
+        
+        #for box_order in itertools.permutations(range(0, len(boxes))):
+        box_order = range(0, len(boxes))
+        for perm in itertools.permutations(range(0, len(boxes))):
+            cost = self._dist(node.state.player, boxes[box_order[0]]) if node.state.player else 0
+            
+            for i, pos in enumerate(perm):
+                cost += dist_mat[box_order[i]][pos]
+                
+                if i < len(perm) - 1:
+                    cost += dist_mat[box_order[i + 1]][pos]
+                
+            h_value = min(h_value, cost)
+            
+        return h_value
 
 class XStrategy:
     def __init__(self, instance, y_strategy):
