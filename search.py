@@ -77,6 +77,7 @@ class Fringe(object):
         self.visited = set()
         
         self.best_cost = defaultdict(lambda: float("inf"))
+        self.best_node = dict()
         
     def init(self, nodes):
         self.nodes_generated.update(set(nodes))
@@ -293,5 +294,73 @@ def search(instance, start, fringe, debug = False):
                 fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
             
             fringe.extend(successors)
+    
+    raise SolutionNotFoundError(fringe)
+    
+def bidirectional_search(instances, starts, fringes, debug = False):
+    k = [0, 0]
+    last_cost = [0, 0]
+    direction = 0
+    
+    shortest = float("inf")
+    sol = (None, None)
+    
+    for i in [0, 1]:
+        fringes[i].init([Node(starts[i])])
+    
+    while fringes[i]:
+        instance, fringe = instances[direction], fringes[direction]
+        
+        current = fringe.pop()
+        
+        last_cost[direction] = max(last_cost[direction], current.cost)
+        
+        if debug:
+            if current.cost > k[direction]:
+                k[direction] = current.cost
+                print(sum(k))
+                
+        if sum(last_cost) >= shortest:
+            a, b = sol
+            
+            b = b.pred
+                
+            while b:
+                neighbor = next(filter(lambda s: s[0] == b.state, a.state.get_neighbors()))
+                a = Node(neighbor[0], a, a.cost + neighbor[1], a.depth + 1)
+                
+                b = b.pred
+            
+            return Solution(a, fringe, fringes[0].visited.union(fringes[1].visited))
+        
+        if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
+            fringe.visited.add(current.state)
+            fringe.best_cost[current.state] = current.cost
+            fringe.best_node[current.state] = current
+            
+            if current.state in fringes[1 - direction].visited:
+                node = fringes[1].best_node[current.state]
+                current = fringes[0].best_node[current.state]
+                
+                if current.cost + node.cost < shortest:
+                    shortest = current.cost + node.cost
+                    sol = (current, node)
+            
+            instance.last_state = current.pred.state if current.pred else None
+            
+            successors = map(lambda s: Node(s[0], 
+                                    current, 
+                                    current.cost + s[1], 
+                                    current.depth + 1),
+                                current.state.get_neighbors())
+            successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)
+            successors = list(successors)
+            
+            for node in successors:
+                fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
+                
+            fringe.extend(successors)
+            
+        direction = 1 - direction
     
     raise SolutionNotFoundError(fringe)
