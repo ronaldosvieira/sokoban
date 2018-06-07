@@ -202,19 +202,20 @@ class GameInstance:
         self.grid = list(map(list, grid))
         self.width, self.height = width, height
         
-        swap = {'.': 'b', 'b': '.', 'O': 'b', 'o': ' ',}
-        self.reversed_grid = list(map(list, grid))
         self.empty_grid = list(map(list, grid))
+        self.reversed_grid = list(map(list, grid))
+        
+        swap = {'.': 'b', 'b': '.', 'O': 'b', 'o': ' '}
         
         for y in range(0, height):
             for x in range(0, width):
+                self.empty_grid[y][x] = ' ' if self.empty_grid[y][x] != '@' else '@'
+                
                 try:
                     self.reversed_grid[y][x] = swap[self.reversed_grid[y][x]]
                 except:
                     pass
-                
-                self.empty_grid[y][x] = ' ' if self.empty_grid[y][x] != '@' else '@'
-                
+        
         self.states = {}
         self.grids = {}
         
@@ -272,6 +273,68 @@ class GameInstance:
             return grid[y][x] in ['@', 'b', 'B']
         except IndexError:
             return True
+    
+    def generate_neighbors(self, state):
+        neighbors = []
+        
+        current_grid = self.get_grid_from_state(state)
+        available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
+        last_action = self.last_state.diff(state) if self.last_state else None
+        
+        for x, y in available_boxes:
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                if ((x, y), (dx, dy)) == last_action:
+                    continue
+                
+                old_player_pos = (x - dx, y - dy)
+                new_player_pos = (x, y)
+                box_pos = (x + dx, y + dy)
+                
+                player_blocked = self._is_blocked(current_grid, *old_player_pos)
+                box_blocked = self._is_blocked(current_grid, *box_pos)
+                
+                if player_blocked or box_blocked:
+                    continue
+                
+                new_boxes = [(x_j, y_j) if (x_j, y_j) != (x, y) else (x_j + dx, y_j + dy) for x_j, y_j in state.boxes]
+                
+                neighbor = GameState(self, new_boxes, new_player_pos)
+                
+                cost = 1
+                
+                if state.player and state.player != old_player_pos:
+                    neighbor_grid = self.get_grid_from_state(state)
+                    path_search = GridSearchInstance(neighbor_grid, state.player)
+                    path_search_start = GridSearchState(path_search, *old_player_pos)
+                    
+                    try:
+                        path = search.search(path_search, 
+                                path_search_start,
+                                search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
+                        cost = path.info["cost"] + 1
+                    except search.SolutionNotFoundError:
+                        continue
+                
+                try:
+                    neighbor = self.states[neighbor]
+                except:
+                    self.states[neighbor] = neighbor
+                
+                neighbors.append((neighbor, cost))
+                
+        return neighbors
+    
+    def is_goal(self, state):
+        return state == self.goal
+
+class ReversedGameInstance(GameInstance):
+    def __init__(self, width, height, grid, x_strategy = AfterEachStep, y_strategy = AllBoxes):
+        super().__init__(width, height, grid, x_strategy, y_strategy)
+        
+        self.grid, self.reversed_grid = self.reversed_grid, self.grid
+        self.start, self.goal = self.goal, self.start
+        
+        self.boxes_to_consider = x_strategy(self, y_strategy(self.goal))
         
     def generate_neighbors(self, state):
         neighbors = []
@@ -321,13 +384,8 @@ class GameInstance:
                 neighbors.append((neighbor, cost))
         
         return neighbors
-        
-    def is_goal(self, state):
-        return state == self.goal
 
-def solve(width, height, grid, search_strategy, x_strategy, y_strategy):
-    instance = GameInstance(width, height, grid, x_strategy, y_strategy)
-    
+def solve(instance, search_strategy):
     solution = search.search(instance, instance.start, search_strategy, True)
     
     for i in range(0, len(solution)):
@@ -376,19 +434,24 @@ def main():
     
     try:
         if strategy == 'x1y1':
-            solution = solve(width, height, grid, search.UniformCostFringe(), AfterEachStep, AllBoxes)
+            instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
+            instance2 = ReversedGameInstance(width, height, grid, AfterEachStep, AllBoxes)
+            solution = solve(instance, search.UniformCostFringe())
         elif strategy == 'x3y2':
-            solution = solve(width, height, grid, search.UniformCostFringe(), UntilPlaced, UnplacedBoxes)
+            instance = ReversedGameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
+            solution = solve(instance, search.UniformCostFringe())
         elif strategy == 'x4y2':
             if parameter:
-                solution = solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(int(parameter)), UnplacedBoxes)
+                instance = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
+                solution = solve(instance, search.UniformCostFringe())
             else:
                 limit = 2 * max(width, height)
                 k = 0
                 
                 while True:
                     try:
-                        solution = solve(width, height, grid, search.UniformCostFringe(), until_k_steps_away(k), UnplacedBoxes)
+                        instance = ReversedGameInstance(width, height, grid, until_k_steps_away(k), UnplacedBoxes)
+                        solution = solve(instance, search.UniformCostFringe())
                     except search.SolutionNotFoundError as s:
                         k += 1
                         
