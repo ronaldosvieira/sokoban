@@ -186,6 +186,16 @@ class GameState:
             self.hash_val = hash((((x, y) for x, y in self.boxes), self.player))
             
         return self.hash_val
+        
+    def diff(self, other):
+        action = None
+        
+        for i, box in enumerate(self.boxes):
+            if not box in other.boxes:
+                move = (box, tuple(t1 - t2 for t1, t2 in zip(self.boxes[i], other.boxes[i])))
+                break
+            
+        return move
 
 class GameInstance:
     def __init__(self, width, height, grid, x_strategy = AfterEachStep, y_strategy = AllBoxes):
