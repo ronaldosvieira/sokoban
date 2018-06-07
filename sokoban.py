@@ -300,7 +300,7 @@ class GameInstance:
 
                 cost = 1
                 
-                if state.player:
+                if state.player and state.player != box_pos:
                     neighbor_grid = self.get_grid_from_state(state)
                     path_search = GridSearchInstance(neighbor_grid, state.player)
                     path_search_start = GridSearchState(path_search, *box_pos)
