@@ -32,7 +32,7 @@ class GridSearchInstance:
         self.states = {}
         self.goal = GridSearchState(self, goal[0], goal[1])
         
-    def __is_blocked(self, x, y):
+    def _is_blocked(self, x, y):
         try:
             return self.grid[y][x] in ['@', 'b', 'B']
         except IndexError:
@@ -43,7 +43,7 @@ class GridSearchInstance:
         x, y = state.x, state.y
         
         for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-            if not self.__is_blocked(x + dx, y + dy):
+            if not self._is_blocked(x + dx, y + dy):
                 neighbor = GridSearchState(self, x + dx, y + dy)
                 
                 try:
@@ -207,14 +207,14 @@ class GameInstance:
                 
         self.states = {}
         self.grids = {}
-                
-        self.start = self.__get_state_from_grid(self.reversed_grid)
-        self.goal = self.__get_state_from_grid(self.grid)
+        
+        self.start = self._get_state_from_grid(self.grid)
+        self.goal = self._get_state_from_grid(self.reversed_grid)
         
         self.last_state = None
         self.boxes_to_consider = x_strategy(self, y_strategy(self.goal))
-
-    def __get_state_from_grid(self, grid):
+    
+    def _get_state_from_grid(self, grid):
         boxes = []
         player = None
         
@@ -230,7 +230,7 @@ class GameInstance:
         self.states[state] = state
         
         return state
-        
+    
     def get_grid_from_state(self, state):
         try:
             return self.grids[state]
@@ -256,8 +256,8 @@ class GameInstance:
             self.grids[state] = new_grid
             
             return self.grids[state]
-        
-    def __is_blocked(self, grid, x, y):
+    
+    def _is_blocked(self, grid, x, y):
         try:
             return grid[y][x] in ['@', 'b', 'B']
         except IndexError:
@@ -274,13 +274,13 @@ class GameInstance:
                 player_pos = (x + (2 * dx), y + (2 * dy))
                 box_pos = (x + dx, y + dy)
                 
-                player_blocked = self.__is_blocked(current_grid, *player_pos)
-                box_blocked = self.__is_blocked(current_grid, *box_pos)
+                player_blocked = self._is_blocked(current_grid, *player_pos)
+                box_blocked = self._is_blocked(current_grid, *box_pos)
                 
                 if player_blocked or box_blocked:
                     continue
                 
-                new_boxes = [(x_j, y_j) if (x_j, y_j) != (x, y) else (x + dx, y_j + dy) for x_j, y_j in state.boxes]
+                new_boxes = [(x_j, y_j) if (x_j, y_j) != (x, y) else (x_j + dx, y_j + dy) for x_j, y_j in state.boxes]
                     
                 neighbor = GameState(self, new_boxes, player_pos)
 
