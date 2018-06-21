@@ -308,7 +308,7 @@ def bidirectional_search(instances, starts, fringes, debug = False):
     for i in [0, 1]:
         fringes[i].init([Node(starts[i])])
     
-    while fringes[i]:
+    while all(fringes):
         instance, fringe = instances[direction], fringes[direction]
         
         current = fringe.pop()
