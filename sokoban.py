@@ -1,4 +1,8 @@
 import sys, search, itertools
+from operator import itemgetter
+from collections import defaultdict
+
+UniformCostFringe = search.UniformCostFringe
 
 class GridSearchState:
     def __init__(self, instance, x, y):
@@ -174,6 +178,73 @@ class AllBoxes(YStrategy):
 class UnplacedBoxes(YStrategy):
     def next_box(self, state, grid):
         return list(filter(lambda b: grid[b[1]][b[0]] != 'B', state.boxes))
+
+class NodeSet:
+    def __init__(self):
+        self.nodes = defaultdict(list)
+        
+    def _get_hash(self, node):
+        return tuple((x, y) for x, y in sorted(sorted(node.state.boxes, key=itemgetter(1)), key=itemgetter(0)))
+    
+    def __contains__(self, node):
+        try:
+            self.__getitem__(node)
+            return True
+        except IndexError:
+            return False
+        
+    def add(self, node):
+        state_hash = self._get_hash(node)
+        
+        if state_hash in self.nodes and node.state.player is not None:
+            for similar in self.nodes[state_hash]:
+                if similar.state.player is None: return None
+                
+                try:
+                    grid = node.state.instance.get_grid_from_state(similar.state)
+                    path_search = GridSearchInstance(grid, similar.state.player)
+                    path_search_start = GridSearchState(path_search, *node.state.player)
+                    
+                    path = search.search(path_search, 
+                            path_search_start,
+                            search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
+                    
+                    if node.cost < similar.cost:
+                        self.nodes[state_hash].remove(similar)
+                        break
+                except search.SolutionNotFoundError:
+                    continue
+                
+        return self.nodes[state_hash].append(node)
+
+    def __setitem__(self, state, node):
+        self.add(node)
+
+    def __getitem__(self, node):
+        state_hash = self._get_hash(node)
+    
+        if state_hash in self.nodes:
+            if node.state.player is None: return self.nodes[state_hash][0]
+            
+            for similar in self.nodes[state_hash]:
+                if similar.state.player is None: return similar
+                
+                try:
+                    grid = node.state.instance.get_grid_from_state(similar.state)
+                    path_search = GridSearchInstance(grid, similar.state.player)
+                    path_search_start = GridSearchState(path_search, *node.state.player)
+                    
+                    path = search.search(path_search, 
+                            path_search_start,
+                            search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
+                    return similar
+                except search.SolutionNotFoundError:
+                    continue
+        
+        raise IndexError()
+
+    def union(self, other):
+        return set(self.nodes.keys()).union(set(other.nodes.keys()))
 
 class GameState:
     def __init__(self, instance, boxes, player):
