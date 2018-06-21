@@ -333,14 +333,13 @@ def bidirectional_search(instances, starts, fringes, debug = False):
             
             return Solution(left, fringe, fringes[0].visited.union(fringes[1].visited))
         
-        if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
-            fringe.visited.add(current.state)
-            fringe.best_cost[current.state] = current.cost
-            fringe.best_node[current.state] = current
+        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+            fringe.visited.add(current)
+            fringe.best_node.add(current)
             
-            if current.state in fringes[1 - direction].visited:
-                node = fringes[1].best_node[current.state]
-                current = fringes[0].best_node[current.state]
+            if current in fringes[1 - direction].visited:
+                node = fringes[1].best_node[current]
+                current = fringes[0].best_node[current]
                 
                 if current.cost + node.cost < shortest:
                     shortest = current.cost + node.cost
@@ -353,11 +352,13 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                                     current.cost + s[1], 
                                     current.depth + 1),
                                 current.state.get_neighbors())
-            successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)
+            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
             successors = list(successors)
             
+            #print(list(map(str, successors)))
+            
             for node in successors:
-                fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
+                fringe.best_node.add(node)
                 
             fringe.extend(successors)
             
