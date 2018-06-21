@@ -321,17 +321,17 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 print(sum(k))
                 
         if sum(last_cost) >= shortest:
-            a, b = sol
+            left, right = sol
             
-            b = b.pred
+            right = right.pred
                 
-            while b:
-                neighbor = next(filter(lambda s: s[0] == b.state, a.state.get_neighbors()))
-                a = Node(neighbor[0], a, a.cost + neighbor[1], a.depth + 1)
+            while right:
+                neighbor = next(filter(lambda s: s[0] == right.state, left.state.get_neighbors()))
+                left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
                 
-                b = b.pred
+                right = right.pred
             
-            return Solution(a, fringe, fringes[0].visited.union(fringes[1].visited))
+            return Solution(left, fringe, fringes[0].visited.union(fringes[1].visited))
         
         if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
             fringe.visited.add(current.state)
