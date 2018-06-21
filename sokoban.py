@@ -246,6 +246,12 @@ class NodeSet:
     def union(self, other):
         return set(self.nodes.keys()).union(set(other.nodes.keys()))
 
+class UniformCostSokobanFringe(UniformCostFringe):
+    def __init__(self):
+        super().__init__()
+        self.visited = NodeSet()
+        self.best_node = NodeSet()
+
 class GameState:
     def __init__(self, instance, boxes, player):
         self.instance = instance
@@ -538,7 +544,7 @@ def main():
         if strategy == 'x1y1':
             instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
             instance2 = ReversedGameInstance(width, height, grid, AfterEachStep, AllBoxes)
-            solution = solve(instance, search.UniformCostFringe())
+            solution = solve(instance, UniformCostSokobanFringe())
         elif strategy == 'x3y2':
             instance = ReversedGameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
             solution = solve(instance, search.UniformCostFringe())
