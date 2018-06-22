@@ -77,6 +77,7 @@ class ManhattanDistanceHeuristic:
 class MinMatchingHeuristic:
     def __init__(self, goal):
         self.goal = goal
+        self.instance = goal.instance
         
     def _dist(self, first, second):
         dx = abs(first[0] - second[0])
@@ -97,6 +98,21 @@ class MinMatchingHeuristic:
             h_value += dist_mat[row][column]
             
         return h_value
+
+class MinMatchingActualPath(MinMatchingHeuristic):
+    def _dist(self, first, second):
+        try:
+            grid = self.instance.empty_grid
+            path_search = GridSearchInstance(grid, second)
+            path_search_start = GridSearchState(path_search, *first)
+            
+            path = search.search(path_search, 
+                    path_search_start,
+                    search.AStarFringe(ManhattanDistanceHeuristic(second)))
+                    
+            return path.info["cost"]
+        except search.SolutionNotFoundError:
+            return float("inf")
 
 class XStrategy:
     def __init__(self, instance, y_strategy):
