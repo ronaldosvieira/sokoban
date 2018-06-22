@@ -18,11 +18,11 @@ class Node:
         return "<%s %g>" % (str(self.state), self.cost)
 
 class Solution:
-    def __init__(self, goal, fringe, visited):
+    def __init__(self, goal, generated, visited):
         self.steps = []
         self.info = {}
         
-        self.info["nodes_generated"] = fringe.nodes()
+        self.info["nodes_generated"] = generated
         self.info["nodes_expanded"] = visited
         self.info["depth"] = goal.depth
         self.info["cost"] = goal.cost
@@ -331,7 +331,7 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 
                 right = right.pred
             
-            return Solution(left, fringe, fringes[0].visited.union(fringes[1].visited))
+            return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
         
         if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
             fringe.visited.add(current)

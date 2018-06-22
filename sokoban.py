@@ -203,7 +203,10 @@ class NodeSet:
             return True
         except IndexError:
             return False
-        
+    
+    def __len__(self):
+        return len(self.nodes)
+    
     def add(self, node):
         state_hash = self._get_hash(node)
         
@@ -227,6 +230,10 @@ class NodeSet:
                     continue
                 
         return self.nodes[state_hash].append(node)
+
+    def update(self, node_list):
+        for node in node_list:
+            self.add(node)
 
     def __setitem__(self, state, node):
         self.add(node)
@@ -262,12 +269,14 @@ class UniformCostSokobanFringe(UniformCostFringe):
         super().__init__()
         self.visited = NodeSet()
         self.best_node = NodeSet()
+        self.nodes_generated = NodeSet()
 
 class AStarSokobanFringe(AStarFringe):
     def __init__(self, heuristic):
         super().__init__(heuristic)
         self.visited = NodeSet()
         self.best_node = NodeSet()
+        self.nodes_generated = NodeSet()
 
 class GameState:
     def __init__(self, instance, boxes, player):
