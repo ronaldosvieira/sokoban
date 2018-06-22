@@ -1,8 +1,10 @@
 import sys, search, itertools
 from operator import itemgetter
 from collections import defaultdict
+from munkres import Munkres
 
 UniformCostFringe = search.UniformCostFringe
+AStarFringe = search.AStarFringe
 
 class GridSearchState:
     def __init__(self, instance, x, y):
@@ -86,20 +88,13 @@ class MinMatchingHeuristic:
         boxes = list(node.state.boxes)
         
         dist_mat = [[self._dist(box, goal) for box in boxes] for goal in self.goal.boxes]
-        h_value = float("inf")
+        h_value = 0
         
-        #for box_order in itertools.permutations(range(0, len(boxes))):
-        box_order = range(0, len(boxes))
-        for perm in itertools.permutations(range(0, len(boxes))):
-            cost = self._dist(node.state.player, boxes[box_order[0]]) if node.state.player else 0
-            
-            for i, pos in enumerate(perm):
-                cost += dist_mat[box_order[i]][pos]
-                
-                if i < len(perm) - 1:
-                    cost += dist_mat[box_order[i + 1]][pos]
-                
-            h_value = min(h_value, cost)
+        m = Munkres()
+        indexes = m.compute(dist_mat)
+        
+        for row, column in indexes:
+            h_value += dist_mat[row][column]
             
         return h_value
 
@@ -249,6 +244,12 @@ class NodeSet:
 class UniformCostSokobanFringe(UniformCostFringe):
     def __init__(self):
         super().__init__()
+        self.visited = NodeSet()
+        self.best_node = NodeSet()
+
+class AStarSokobanFringe(AStarFringe):
+    def __init__(self, heuristic):
+        super().__init__(heuristic)
         self.visited = NodeSet()
         self.best_node = NodeSet()
 
