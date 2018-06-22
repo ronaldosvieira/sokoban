@@ -116,13 +116,46 @@ class MinMatchingActualPath(MinMatchingHeuristic):
 
 class MinMatchingPlayer(MinMatchingHeuristic):
     def get(self, node):
-        h_value = super().get(node)
+        boxes = list(node.state.boxes)
+        player = node.state.player
         
-        if node.state.player is not None:
-            dist_to_boxes = [self._dist(node.state.player, box) - 1 for box in node.state.boxes]
+        dist_mat = [[self._dist(box, goal) for box in boxes] for goal in self.goal.boxes]
+        h_value = 0
+        
+        m = Munkres()
+        indexes = m.compute(dist_mat)
+        done_list = [False for _ in boxes]
+        
+        for goal, box in indexes:
+            h_value += dist_mat[goal][box]
             
-            h_value += min(dist_to_boxes)
+            if boxes[box] == self.goal.boxes[goal]:
+                done_list[box] = True
         
+        boxes_aux = []
+        
+        for box, done in zip(boxes, done_list):
+            if not done:
+                boxes_aux.append(box)
+            
+        boxes = list(boxes_aux)
+        
+        if player is not None:
+            current_pos = player
+        else:
+            try:
+                current_pos = boxes[0]
+            except:
+                pass
+        
+        while boxes:
+            dist_to_boxes = [self._dist(current_pos, box) - 1 for box in boxes]
+            next_box = dist_to_boxes.index(min(dist_to_boxes))
+            
+            h_value += dist_to_boxes[next_box]
+            
+            current_pos = boxes.pop(next_box)
+            
         return h_value
 
 class MinMatchingActualPlayerPath(MinMatchingActualPath, MinMatchingPlayer):
