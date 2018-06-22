@@ -114,6 +114,20 @@ class MinMatchingActualPath(MinMatchingHeuristic):
         except search.SolutionNotFoundError:
             return float("inf")
 
+class MinMatchingPlayer(MinMatchingHeuristic):
+    def get(self, node):
+        h_value = super().get(node)
+        
+        if node.state.player is not None:
+            dist_to_boxes = [self._dist(node.state.player, box) - 1 for box in node.state.boxes]
+            
+            h_value += min(dist_to_boxes)
+        
+        return h_value
+
+class MinMatchingActualPlayerPath(MinMatchingActualPath, MinMatchingPlayer):
+    pass
+
 class XStrategy:
     def __init__(self, instance, y_strategy):
         self.instance = instance
