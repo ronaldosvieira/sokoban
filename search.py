@@ -341,7 +341,9 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 node = fringes[1].best_node[current]
                 current = fringes[0].best_node[current]
                 
-                if current.cost + node.cost < shortest:
+                combined_cost = current.cost + instance.dist(current.state, node.state) + node.cost
+                
+                if combined_cost < shortest:
                     shortest = current.cost + node.cost
                     sol = (current, node)
             

@@ -458,6 +458,23 @@ class GameInstance:
                 
         return neighbors
     
+    def dist(self, first, second):
+        if first.player is None or second.player is None:
+            return 0
+        
+        try:
+            grid = first.instance.get_grid_from_state(first)
+            path_search = GridSearchInstance(grid, second.player)
+            path_search_start = GridSearchState(path_search, *first.player)
+            
+            path = search.search(path_search, 
+                    path_search_start,
+                    search.AStarFringe(ManhattanDistanceHeuristic(second.player)))
+                    
+            return path.info["cost"]
+        except search.SolutionNotFoundError:
+            return float("inf")
+    
     def is_goal(self, state):
         return state == self.goal
 
