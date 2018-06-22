@@ -1,4 +1,4 @@
-import sys, search, itertools
+import sys, search, itertools, time
 from operator import itemgetter
 from collections import defaultdict
 from munkres import Munkres
@@ -583,6 +583,8 @@ def main():
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
     
+    start_time = time.time()
+    
     try:
         if strategy == 'x1y1':
             instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
@@ -616,10 +618,14 @@ def main():
         else:
             print("invalid strategy")
             sys.exit(1)
+            
+        end_time = time.time()
     
         print("solution length:", len(solution))
         print("solution cost:", solution.info["cost"])
+        print(len(solution.info["nodes_expanded"]), "nodes expanded")
         print(len(solution.info["nodes_generated"]), "nodes generated")
+        print("time elapsed: %g" % (end_time - start_time))
     except search.SolutionNotFoundError as e:
         print("no solution")
         print(len(e.fringe.nodes_generated), "nodes generated")
