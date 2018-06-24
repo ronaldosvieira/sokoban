@@ -3,6 +3,7 @@ from operator import itemgetter
 from collections import defaultdict
 from munkres import Munkres
 
+BreadthFirstFringe = search.BreadthFirstFringe
 UniformCostFringe = search.UniformCostFringe
 AStarFringe = search.AStarFringe
 
@@ -310,6 +311,13 @@ class NodeSet:
 
     def union(self, other):
         return set(self.nodes.keys()).union(set(other.nodes.keys()))
+
+class BreadthFirstSokobanFringe(BreadthFirstFringe):
+    def __init__(self):
+        super().__init__()
+        self.visited = NodeSet()
+        self.best_node = NodeSet()
+        self.nodes_generated = NodeSet()
 
 class UniformCostSokobanFringe(UniformCostFringe):
     def __init__(self):
