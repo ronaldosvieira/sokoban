@@ -18,11 +18,11 @@ class Node:
         return "<%s %g>" % (str(self.state), self.cost)
 
 class Solution:
-    def __init__(self, goal, fringe, visited):
+    def __init__(self, goal, generated, visited):
         self.steps = []
         self.info = {}
         
-        self.info["nodes_generated"] = fringe.nodes()
+        self.info["nodes_generated"] = generated
         self.info["nodes_expanded"] = visited
         self.info["depth"] = goal.depth
         self.info["cost"] = goal.cost
@@ -51,32 +51,13 @@ class InvalidGoalError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
-class ManhattanDistanceHeuristic:
-    def __init__(self, goal):
-        self.goal = goal
-    
-    def get(self, node):
-        dx = abs(node[0] - self.goal[0])
-        dy = abs(node[1] - self.goal[1])
-        
-        return dx + dy
-
-class OctileDistanceHeuristic:
-    def __init__(self, goal):
-        self.goal = goal
-        
-    def get(self, node):
-        dx = abs(node[0] - self.goal[0])
-        dy = abs(node[1] - self.goal[1])
-        
-        return max(dx, dy) + 0.5 * min(dx, dy)
-
 class Fringe(object):
     def __init__(self):
         self.nodes_generated = set()
         self.visited = set()
         
         self.best_cost = defaultdict(lambda: float("inf"))
+        self.best_node = dict()
         
     def init(self, nodes):
         self.nodes_generated.update(set(nodes))
@@ -258,8 +239,8 @@ class AStarFringe(Fringe):
         for node in nodes:
             heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
 
-def search(instance, start, fringe, debug = False):
-    k = 0
+def grid_search(instance, start, fringe, debug = False):
+    k = -1
     
     fringe.init([Node(start)])
     
@@ -293,5 +274,113 @@ def search(instance, start, fringe, debug = False):
                 fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
             
             fringe.extend(successors)
+    
+    raise SolutionNotFoundError(fringe)
+
+def search(instance, start, fringe, debug = False):
+    k = -1
+    
+    fringe.init([Node(start)])
+    
+    while fringe:
+        current = fringe.pop()
+        
+        if debug:
+            if current.cost > k:
+                k = current.cost
+                print(k)
+        
+        if instance.is_goal(current.state):
+            return Solution(current, fringe.nodes_generated, fringe.visited)
+            
+        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+            fringe.visited.add(current)
+            fringe.best_node.add(current)
+            
+            try:
+                instance.last_state = current.pred.state
+            except:
+                instance.last_state = None
+            
+            successors = map(lambda s: Node(s[0], current, current.cost + s[1], current.depth + 1), 
+                                current.state.get_neighbors())
+            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
+            successors = list(successors)
+            
+            for node in successors:
+                fringe.best_node.add(node)
+            
+            fringe.extend(successors)
+    
+    raise SolutionNotFoundError(fringe)
+
+def bidirectional_search(instances, starts, fringes, debug = False):
+    k = [0, 0]
+    last_cost = [0, 0]
+    direction = 0
+    
+    shortest = float("inf")
+    sol = (None, None)
+    
+    for i in [0, 1]:
+        fringes[i].init([Node(starts[i])])
+    
+    while all(fringes):
+        instance, fringe = instances[direction], fringes[direction]
+        
+        current = fringe.pop()
+        
+        last_cost[direction] = max(last_cost[direction], current.cost)
+        
+        if debug:
+            if current.cost > k[direction]:
+                k[direction] = current.cost
+                print(sum(k))
+                
+        if sum(last_cost) >= shortest:
+            left, right = sol
+            
+            right = right.pred
+                
+            while right:
+                neighbor = next(filter(lambda s: s[0] == right.state, left.state.get_neighbors()))
+                left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
+                
+                right = right.pred
+            
+            return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
+        
+        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+            fringe.visited.add(current)
+            fringe.best_node.add(current)
+            
+            if current in fringes[1 - direction].visited:
+                node = fringes[1].best_node[current]
+                current = fringes[0].best_node[current]
+                
+                combined_cost = current.cost + instance.dist(current.state, node.state) + node.cost
+                
+                if combined_cost < shortest:
+                    shortest = current.cost + node.cost
+                    sol = (current, node)
+            
+            instance.last_state = current.pred.state if current.pred else None
+            
+            successors = map(lambda s: Node(s[0], 
+                                    current, 
+                                    current.cost + s[1], 
+                                    current.depth + 1),
+                                current.state.get_neighbors())
+            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
+            successors = list(successors)
+            
+            #print(list(map(str, successors)))
+            
+            for node in successors:
+                fringe.best_node.add(node)
+                
+            fringe.extend(successors)
+            
+        direction = 1 - direction
     
     raise SolutionNotFoundError(fringe)
