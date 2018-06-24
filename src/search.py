@@ -294,7 +294,7 @@ def search(instance, start, fringe, debug = False):
         
         if instance.is_goal(current.state):
             return Solution(current, fringe.nodes_generated, fringe.visited)
-            
+        
         if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
             fringe.visited.add(current)
             fringe.best_node.add(current)

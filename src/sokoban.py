@@ -471,13 +471,9 @@ class GameInstance:
         
         current_grid = self.get_grid_from_state(state)
         available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
-        last_action = self.last_state.diff(state) if self.last_state else None
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                if ((x, y), (dx, dy)) == last_action:
-                    continue
-                
                 old_player_pos = (x - dx, y - dy)
                 new_player_pos = (x, y)
                 box_pos = (x + dx, y + dy)
@@ -550,13 +546,9 @@ class ReversedGameInstance(GameInstance):
         
         current_grid = self.get_grid_from_state(state)
         available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
-        last_action = self.last_state.diff(state) if self.last_state else None
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                if ((x, y), (dx, dy)) == last_action:
-                    continue
-                
                 player_pos = (x + (2 * dx), y + (2 * dy))
                 box_pos = (x + dx, y + dy)
                 
