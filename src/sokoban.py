@@ -625,14 +625,14 @@ def solve_bid(instance, search_strategy, instance2, search_strategy2):
 def main():
     raw_data = sys.argv
     
-    if len(raw_data) not in (3, 4):
+    if len(raw_data) not in (4, 5):
         print("usage: %s instance algorithm strategy parameter?" % raw_data[0])
         sys.exit(1)
     
     instance, algorithm, strategy = raw_data[1:4]
     
     try:
-        parameter = raw_data[5]
+        parameter = raw_data[4]
     except:
         parameter = None
     
@@ -654,6 +654,7 @@ def main():
             instance2 = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
         else:
             print("invalid parameter for x4y2")
+            sys.exit(1)
     else:
         print("invalid strategy")
         sys.exit(1)
