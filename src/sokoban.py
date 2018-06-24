@@ -75,6 +75,10 @@ class ManhattanDistanceHeuristic:
         
         return dx + dy
         
+class NullHeuristic:
+    def get(self, node):
+        return 0
+
 class MinMatchingHeuristic:
     def __init__(self, goal):
         self.goal = goal
@@ -270,10 +274,7 @@ class NodeSet:
                     path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
-                    
-                    if node.cost < similar.cost:
-                        self.nodes[state_hash].remove(similar)
-                        break
+                
                 except search.SolutionNotFoundError:
                     continue
                 
@@ -290,10 +291,12 @@ class NodeSet:
         state_hash = self._get_hash(node)
     
         if state_hash in self.nodes:
-            if node.state.player is None: return self.nodes[state_hash][0]
+            if node.state.player is None: return (0, self.nodes[state_hash][0])
+            
+            found = (None, None)
             
             for similar in self.nodes[state_hash]:
-                if similar.state.player is None: return similar
+                if similar.state.player is None: return (0, similar)
                 
                 try:
                     grid = node.state.instance.get_grid_from_state(similar.state)
@@ -303,9 +306,13 @@ class NodeSet:
                     path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
-                    return similar
+                    
+                    if not found[1] or similar.cost + path.info["cost"] < found[1].cost:
+                        found = (path.info["cost"], similar)
                 except search.SolutionNotFoundError:
                     continue
+                
+            if found[1]: return found
         
         raise IndexError()
 
@@ -372,7 +379,7 @@ class GameState:
     def __hash__(self):
         if self.hash_val is None:
             #self.hash_val = sum(x + y * self.instance.width for x, y in self.boxes)
-            self.hash_val = hash((((x, y) for x, y in self.boxes), self.player))
+            self.hash_val = hash((((x, y) for x, y in sorted(sorted(self.boxes, key=itemgetter(1)), key=itemgetter(0))), self.player))
             
         return self.hash_val
         
@@ -468,13 +475,9 @@ class GameInstance:
         
         current_grid = self.get_grid_from_state(state)
         available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
-        last_action = self.last_state.diff(state) if self.last_state else None
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                if ((x, y), (dx, dy)) == last_action:
-                    continue
-                
                 old_player_pos = (x - dx, y - dy)
                 new_player_pos = (x, y)
                 box_pos = (x + dx, y + dy)
@@ -547,13 +550,9 @@ class ReversedGameInstance(GameInstance):
         
         current_grid = self.get_grid_from_state(state)
         available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
-        last_action = self.last_state.diff(state) if self.last_state else None
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                if ((x, y), (dx, dy)) == last_action:
-                    continue
-                
                 player_pos = (x + (2 * dx), y + (2 * dy))
                 box_pos = (x + dx, y + dy)
                 
@@ -605,8 +604,10 @@ def solve_uni(instance, search_strategy):
     path_to_start = search.grid_search(path_search, 
             path_search_start, 
             search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
-            
+    
     solution.info["cost"] += path_to_start.info["cost"]
+    
+    print(instance.goal, solution.info["cost"])
     
     return solution
 
@@ -619,20 +620,20 @@ def solve_bid(instance, search_strategy, instance2, search_strategy2):
     
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost, dist.get(solution[i]))
-        
+    
     return solution
 
 def main():
     raw_data = sys.argv
     
-    if len(raw_data) not in (3, 4):
+    if len(raw_data) not in (4, 5):
         print("usage: %s instance algorithm strategy parameter?" % raw_data[0])
         sys.exit(1)
     
     instance, algorithm, strategy = raw_data[1:4]
     
     try:
-        parameter = raw_data[5]
+        parameter = raw_data[4]
     except:
         parameter = None
     
@@ -654,6 +655,7 @@ def main():
             instance2 = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
         else:
             print("invalid parameter for x4y2")
+            sys.exit(1)
     else:
         print("invalid strategy")
         sys.exit(1)
