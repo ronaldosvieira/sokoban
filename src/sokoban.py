@@ -271,9 +271,9 @@ class NodeSet:
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
                     
-                    if node.cost < similar.cost:
+                    '''if node.cost < similar.cost:
                         self.nodes[state_hash].remove(similar)
-                        break
+                        break'''
                 except search.SolutionNotFoundError:
                     continue
                 
@@ -292,6 +292,8 @@ class NodeSet:
         if state_hash in self.nodes:
             if node.state.player is None: return self.nodes[state_hash][0]
             
+            found = None
+            
             for similar in self.nodes[state_hash]:
                 if similar.state.player is None: return similar
                 
@@ -303,9 +305,13 @@ class NodeSet:
                     path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
-                    return similar
+                    #return similar
+                    if not found or similar.cost + path.info["cost"] < found.cost:
+                        found = similar
                 except search.SolutionNotFoundError:
                     continue
+                
+            if found: return found
         
         raise IndexError()
 
@@ -372,7 +378,7 @@ class GameState:
     def __hash__(self):
         if self.hash_val is None:
             #self.hash_val = sum(x + y * self.instance.width for x, y in self.boxes)
-            self.hash_val = hash((((x, y) for x, y in self.boxes), self.player))
+            self.hash_val = hash((((x, y) for x, y in sorted(sorted(self.boxes, key=itemgetter(1)), key=itemgetter(0))), self.player))
             
         return self.hash_val
         
