@@ -55,6 +55,7 @@ class Fringe(object):
     def __init__(self):
         self.nodes_generated = set()
         self.visited = set()
+        self.open_list = list()
         
         self.best_cost = defaultdict(lambda: float("inf"))
         self.best_node = dict()
@@ -68,6 +69,9 @@ class Fringe(object):
         
     def nodes(self):
         return self.nodes_generated
+        
+    def top_cost(self):
+        return self.open_list[0][0]
         
     def bidirectional_stopping_criteria(self, costs, shortest):
         return False
@@ -145,6 +149,9 @@ class DepthFirstFringe(Fringe):
     def extend(self, nodes):
         super().extend(nodes)
         self.open_list.extend(nodes)
+        
+    def top_cost(self):
+        return self.open_list[-1][0]
 
 class LimitedDepthFirstFringe(Fringe):
     def __init__(self, limit):
@@ -188,6 +195,9 @@ class LimitedDepthFirstFringe(Fringe):
         
         super().extend(nodes)
         self.open_list.extend(nodes)
+        
+    def top_cost(self):
+        return self.open_list[-1][0]
 
 class BestFirstFringe(Fringe):
     def __init__(self, heuristic):
@@ -216,7 +226,7 @@ class BestFirstFringe(Fringe):
         
         for node in nodes:
             heapq.heappush(self.open_list, (self.heuristic.get(node), node))
-            
+    
     def bidirectional_stopping_criteria(self, costs, shortest):
         return any(map(lambda cost: cost > shortest, costs))
 
@@ -249,6 +259,9 @@ class AStarFringe(Fringe):
         for node in nodes:
             h = self.heuristic.get(node)
             heapq.heappush(self.open_list, ((node.cost + h, h), node))
+            
+    def top_cost(self):
+        return self.open_list[0][0][0]
             
     def bidirectional_stopping_criteria(self, costs, shortest):
         return any(map(lambda cost: cost > shortest, costs))
@@ -348,7 +361,7 @@ def build_bidirectional_solution(solutions, fringes):
 
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
-    last_cost = [0, 0]
+    top_costs = [0, 0]
     direction = 0
     
     shortest = float("inf")
@@ -359,6 +372,11 @@ def bidirectional_search(instances, starts, fringes, debug = False):
     
     while all(fringes):
         instance, fringe = instances[direction], fringes[direction]
+
+        top_costs[direction] = max(top_costs[direction], fringe.top_cost())
+        
+        if fringe.bidirectional_stopping_criteria(top_costs, shortest):
+            return build_bidirectional_solution(sol, fringes)
         
         current = fringe.pop()
         
@@ -366,11 +384,6 @@ def bidirectional_search(instances, starts, fringes, debug = False):
             if current.cost > k[direction]:
                 k[direction] = current.cost
                 print(sum(k))
-                
-        last_cost[direction] = max(last_cost[direction], current.cost)
-        
-        if fringe.bidirectional_stopping_criteria(last_cost, shortest):
-            return build_bidirectional_solution(sol, fringes)
         
         if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
             fringe.visited.add(current)
