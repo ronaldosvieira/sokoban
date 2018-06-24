@@ -75,6 +75,10 @@ class ManhattanDistanceHeuristic:
         
         return dx + dy
         
+class NullHeuristic:
+    def get(self, node):
+        return 0
+
 class MinMatchingHeuristic:
     def __init__(self, goal):
         self.goal = goal
