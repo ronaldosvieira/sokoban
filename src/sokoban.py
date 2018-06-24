@@ -611,8 +611,10 @@ def solve_uni(instance, search_strategy):
     path_to_start = search.grid_search(path_search, 
             path_search_start, 
             search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
-            
+    
     solution.info["cost"] += path_to_start.info["cost"]
+    
+    print(instance.goal, solution.info["cost"])
     
     return solution
 
