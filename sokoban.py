@@ -591,19 +591,11 @@ class ReversedGameInstance(GameInstance):
         
         return neighbors
 
-def solve(instance, search_strategy):
+def solve_uni(instance, search_strategy):
     solution = search.search(instance, instance.start, search_strategy, True)
     
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost)
-        
-        if i < len(solution) - 1:
-            box = list(set(solution[i + 1].state.boxes) - set(solution[i].state.boxes))[0]
-            interm_state = GameState(instance, solution[i].state.boxes, box)
-            
-            #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(interm_state))))
-            print(interm_state)
-            #print("\n".join(map(lambda l: "".join(l), instance.get_grid_from_state(solution[i + 1].state))))
     
     current_grid = instance.get_grid_from_state(instance.goal)
     
@@ -618,17 +610,29 @@ def solve(instance, search_strategy):
     
     return solution
 
+def solve_bid(instance, search_strategy, instance2, search_strategy2):
+    solution = search.bidirectional_search([instance, instance2], 
+                [instance.start, instance2.start], 
+                [search_strategy, search_strategy2], True)
+    
+    dist = MinMatchingActualPlayerPath(instance.goal)
+    
+    for i in range(0, len(solution)):
+        print(solution[i].state, solution[i].cost, dist.get(solution[i]))
+        
+    return solution
+
 def main():
     raw_data = sys.argv
     
     if len(raw_data) not in (3, 4):
-        print("usage: %s instance strategy parameter?" % raw_data[0])
+        print("usage: %s instance algorithm strategy parameter?" % raw_data[0])
         sys.exit(1)
     
-    instance, strategy = raw_data[1:3]
+    instance, algorithm, strategy = raw_data[1:4]
     
     try:
-        parameter = raw_data[3]
+        parameter = raw_data[5]
     except:
         parameter = None
     
@@ -638,40 +642,34 @@ def main():
     width, height = list(map(int, data[0].split()))
     grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
     
-    start_time = time.time()
-    
-    try:
-        if strategy == 'x1y1':
-            instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
-            instance2 = ReversedGameInstance(width, height, grid, AfterEachStep, AllBoxes)
-            solution = solve(instance, UniformCostSokobanFringe())
-        elif strategy == 'x3y2':
-            instance = ReversedGameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
-            solution = solve(instance, search.UniformCostFringe())
-        elif strategy == 'x4y2':
-            if parameter:
-                instance = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
-                solution = solve(instance, search.UniformCostFringe())
-            else:
-                limit = 2 * max(width, height)
-                k = 0
-                
-                while True:
-                    try:
-                        instance = ReversedGameInstance(width, height, grid, until_k_steps_away(k), UnplacedBoxes)
-                        solution = solve(instance, search.UniformCostFringe())
-                    except search.SolutionNotFoundError as s:
-                        k += 1
-                        
-                        if k <= limit:
-                            continue
-                        else:
-                            raise s
-                    except KeyboardInterrupt as ki:
-                        print("x4x2 stopped at k = %d" % k)
-                        raise ki
+    if strategy == 'x1y1':
+        instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
+        instance2 = ReversedGameInstance(width, height, grid, AfterEachStep, AllBoxes)
+    elif strategy == 'x3y2':
+        instance = GameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
+        instance2 = ReversedGameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
+    elif strategy == 'x4y2':
+        if parameter:
+            instance = GameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
+            instance2 = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
         else:
-            print("invalid strategy")
+            print("invalid parameter for x4y2")
+    else:
+        print("invalid strategy")
+        sys.exit(1)
+        
+    try:
+        start_time = time.time()
+        
+        if algorithm == 'baseline':
+            solution = solve_uni(instance2, BreadthFirstSokobanFringe())
+        elif algorithm == 'proposed':
+            solution = solution = solve_bid(instance, 
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)), 
+                instance2, 
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)))
+        else:
+            print("invalid algorithm")
             sys.exit(1)
             
         end_time = time.time()
