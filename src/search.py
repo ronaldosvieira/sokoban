@@ -228,7 +228,8 @@ class AStarFringe(Fringe):
         self.open_list = []
         
         for node in nodes:
-            heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
+            h = self.heuristic.get(node)
+            heapq.heappush(self.open_list, ((node.cost + h, h), node))
         
     def pop(self):
         return heapq.heappop(self.open_list)[1]
@@ -237,7 +238,8 @@ class AStarFringe(Fringe):
         super().extend(nodes)
         
         for node in nodes:
-            heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
+            h = self.heuristic.get(node)
+            heapq.heappush(self.open_list, ((node.cost + h, h), node))
 
 def grid_search(instance, start, fringe, debug = False):
     k = -1
