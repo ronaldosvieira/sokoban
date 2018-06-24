@@ -365,19 +365,6 @@ def bidirectional_search(instances, starts, fringes, debug = False):
             
             instance.last_state = current.pred.state if current.pred else None
             
-            successors = map(lambda s: Node(s[0], 
-                                    current, 
-                                    current.cost + s[1], 
-                                    current.depth + 1),
-                                current.state.get_neighbors())
-            successors = list(filter(lambda n: n not in fringe.best_node or n.cost < combine_cost(fringe.best_node[n]), successors))
-            successors = list(successors)
-            
-            for node in successors:
-                fringe.best_node.add(node)
-                
-            fringe.extend(successors)
-            
             if current in fringes[1 - direction].visited:
                 n1 = fringes[0].best_node[current][1] if direction == 1 else current
                 n2 = fringes[1].best_node[current][1] if direction == 0 else current
@@ -387,6 +374,19 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 if combined_cost < shortest:
                     shortest = combined_cost
                     sol = (n1, n2)
+            else:
+                successors = map(lambda s: Node(s[0], 
+                                        current, 
+                                        current.cost + s[1], 
+                                        current.depth + 1),
+                                    current.state.get_neighbors())
+                successors = list(filter(lambda n: n not in fringe.best_node or n.cost < combine_cost(fringe.best_node[n]), successors))
+                successors = list(successors)
+                
+                for node in successors:
+                    fringe.best_node.add(node)
+                    
+                fringe.extend(successors)
             
         direction = 1 - direction
         
