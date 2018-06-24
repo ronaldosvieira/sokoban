@@ -270,10 +270,7 @@ class NodeSet:
                     path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
-                    
-                    '''if node.cost < similar.cost:
-                        self.nodes[state_hash].remove(similar)
-                        break'''
+                
                 except search.SolutionNotFoundError:
                     continue
                 
@@ -305,7 +302,7 @@ class NodeSet:
                     path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
-                    #return similar
+                    
                     if not found or similar.cost + path.info["cost"] < found.cost:
                         found = similar
                 except search.SolutionNotFoundError:
