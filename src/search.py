@@ -350,29 +350,18 @@ def bidirectional_search(instances, starts, fringes, debug = False):
         
         current = fringe.pop()
         
-        last_cost[direction] = max(last_cost[direction], current.cost)
-        
         if debug:
             if current.cost > k[direction]:
                 k[direction] = current.cost
                 print(sum(k))
                 
-        if sum(last_cost) >= shortest:
+        last_cost[direction] = max(last_cost[direction], current.cost)
+        
             return build_bidirectional_solution(sol, fringes)
         
         if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
             fringe.visited.add(current)
             fringe.best_node.add(current)
-            
-            if current in fringes[1 - direction].visited:
-                n1 = fringes[0].best_node[current][1]
-                n2 = fringes[1].best_node[current][1]
-                
-                combined_cost = n1.cost + instance.dist(n1.state, n2.state) + n2.cost
-                
-                if combined_cost < shortest:
-                    shortest = combined_cost
-                    sol = (n1, n2)
             
             instance.last_state = current.pred.state if current.pred else None
             
@@ -388,6 +377,16 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 fringe.best_node.add(node)
                 
             fringe.extend(successors)
+            
+            if current in fringes[1 - direction].visited:
+                n1 = fringes[0].best_node[current][1] if direction == 1 else current
+                n2 = fringes[1].best_node[current][1] if direction == 0 else current
+                
+                combined_cost = n1.cost + instance.dist(n1.state, n2.state) + n2.cost
+                
+                if combined_cost < shortest:
+                    shortest = combined_cost
+                    sol = (n1, n2)
             
         direction = 1 - direction
         
