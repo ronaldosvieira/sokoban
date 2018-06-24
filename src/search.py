@@ -279,6 +279,9 @@ def grid_search(instance, start, fringe, debug = False):
     
     raise SolutionNotFoundError(fringe)
 
+def combine_cost(result):
+    return result[0] + result[1].cost
+
 def search(instance, start, fringe, debug = False):
     k = -1
     
@@ -295,7 +298,7 @@ def search(instance, start, fringe, debug = False):
         if instance.is_goal(current.state):
             return Solution(current, fringe.nodes_generated, fringe.visited)
         
-        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+        if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
             fringe.visited.add(current)
             fringe.best_node.add(current)
             
@@ -306,7 +309,7 @@ def search(instance, start, fringe, debug = False):
             
             successors = map(lambda s: Node(s[0], current, current.cost + s[1], current.depth + 1), 
                                 current.state.get_neighbors())
-            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
+            successors = filter(lambda n: n not in fringe.best_node or n.cost < combine_cost(fringe.best_node[n]), successors)
             successors = list(successors)
             
             for node in successors:
@@ -330,9 +333,6 @@ def build_bidirectional_solution(solutions, fringes):
         right = right.pred
     
     return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
-
-def combine_cost(result):
-    return result[0] + result[1].cost
 
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
