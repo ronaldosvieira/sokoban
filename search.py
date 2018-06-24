@@ -259,6 +259,44 @@ class AStarFringe(Fringe):
         for node in nodes:
             heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
 
+def grid_search(instance, start, fringe, debug = False):
+    k = -1
+    
+    fringe.init([Node(start)])
+    
+    while fringe:
+        current = fringe.pop()
+        
+        if debug:
+            if current.cost > k:
+                k = current.cost
+                print(k)
+        
+        if instance.is_goal(current.state):
+            return Solution(current, fringe, fringe.visited)
+            
+        if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
+            fringe.visited.add(current.state)
+            
+            fringe.best_cost[current.state] = current.cost
+            
+            try:
+                instance.last_state = current.pred.state
+            except:
+                instance.last_state = None
+            
+            successors = map(lambda s: Node(s[0], current, current.cost + s[1], current.depth + 1), 
+                                current.state.get_neighbors())
+            successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)
+            successors = list(successors)
+            
+            for node in successors:
+                fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
+            
+            fringe.extend(successors)
+    
+    raise SolutionNotFoundError(fringe)
+
 def search(instance, start, fringe, debug = False):
     k = -1
     

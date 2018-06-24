@@ -107,7 +107,7 @@ class MinMatchingActualPath(MinMatchingHeuristic):
             path_search = GridSearchInstance(grid, second)
             path_search_start = GridSearchState(path_search, *first)
             
-            path = search.search(path_search, 
+            path = search.grid_search(path_search, 
                     path_search_start,
                     search.AStarFringe(ManhattanDistanceHeuristic(second)))
                     
@@ -267,7 +267,7 @@ class NodeSet:
                     path_search = GridSearchInstance(grid, similar.state.player)
                     path_search_start = GridSearchState(path_search, *node.state.player)
                     
-                    path = search.search(path_search, 
+                    path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
                     
@@ -300,7 +300,7 @@ class NodeSet:
                     path_search = GridSearchInstance(grid, similar.state.player)
                     path_search_start = GridSearchState(path_search, *node.state.player)
                     
-                    path = search.search(path_search, 
+                    path = search.grid_search(path_search, 
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
                     return similar
@@ -360,7 +360,7 @@ class GameState:
             path_search_start = GridSearchState(path_search, other.player[0], other.player[1])
             
             try:
-                search.search(path_search, path_search_start, search.AStarFringe(ManhattanDistanceHeuristic(self.player)))
+                search.grid_search(path_search, path_search_start, search.AStarFringe(ManhattanDistanceHeuristic(self.player)))
             except search.SolutionNotFoundError:
                 return False
         
@@ -497,7 +497,7 @@ class GameInstance:
                     path_search_start = GridSearchState(path_search, *old_player_pos)
                     
                     try:
-                        path = search.search(path_search, 
+                        path = search.grid_search(path_search, 
                                 path_search_start,
                                 search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
                         cost = path.info["cost"] + 1
@@ -522,7 +522,7 @@ class GameInstance:
             path_search = GridSearchInstance(grid, second.player)
             path_search_start = GridSearchState(path_search, *first.player)
             
-            path = search.search(path_search, 
+            path = search.grid_search(path_search, 
                     path_search_start,
                     search.AStarFringe(ManhattanDistanceHeuristic(second.player)))
                     
@@ -575,7 +575,7 @@ class ReversedGameInstance(GameInstance):
                     path_search_start = GridSearchState(path_search, *box_pos)
                     
                     try:
-                        path = search.search(path_search, 
+                        path = search.grid_search(path_search, 
                                 path_search_start, 
                                 search.AStarFringe(ManhattanDistanceHeuristic(state.player)))
                         cost = path.info["cost"] + 1
@@ -610,7 +610,7 @@ def solve(instance, search_strategy):
     path_search = GridSearchInstance(current_grid, solution[-1].state.player)
     path_search_start = GridSearchState(path_search, *instance.goal.player)
     
-    path_to_start = search.search(path_search, 
+    path_to_start = search.grid_search(path_search, 
             path_search_start, 
             search.AStarFringe(ManhattanDistanceHeuristic(solution[-1].state.player)))
             
