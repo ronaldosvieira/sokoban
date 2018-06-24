@@ -260,7 +260,7 @@ class AStarFringe(Fringe):
             heapq.heappush(self.open_list, (node.cost + self.heuristic.get(node), node))
 
 def search(instance, start, fringe, debug = False):
-    k = 0
+    k = -1
     
     fringe.init([Node(start)])
     
@@ -273,12 +273,11 @@ def search(instance, start, fringe, debug = False):
                 print(k)
         
         if instance.is_goal(current.state):
-            return Solution(current, fringe, fringe.visited)
+            return Solution(current, fringe.nodes_generated, fringe.visited)
             
-        if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
-            fringe.visited.add(current.state)
-            
-            fringe.best_cost[current.state] = current.cost
+        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+            fringe.visited.add(current)
+            fringe.best_node.add(current)
             
             try:
                 instance.last_state = current.pred.state
@@ -287,16 +286,16 @@ def search(instance, start, fringe, debug = False):
             
             successors = map(lambda s: Node(s[0], current, current.cost + s[1], current.depth + 1), 
                                 current.state.get_neighbors())
-            successors = filter(lambda n: n.cost < fringe.best_cost[n.state], successors)
+            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
             successors = list(successors)
             
             for node in successors:
-                fringe.best_cost[node.state] = min(fringe.best_cost[node.state], node.cost)
+                fringe.best_node.add(node)
             
             fringe.extend(successors)
     
     raise SolutionNotFoundError(fringe)
-    
+
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
     last_cost = [0, 0]
