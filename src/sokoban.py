@@ -287,12 +287,12 @@ class NodeSet:
         state_hash = self._get_hash(node)
     
         if state_hash in self.nodes:
-            if node.state.player is None: return self.nodes[state_hash][0]
+            if node.state.player is None: return (0, self.nodes[state_hash][0])
             
-            found = None
+            found = (None, None)
             
             for similar in self.nodes[state_hash]:
-                if similar.state.player is None: return similar
+                if similar.state.player is None: return (0, similar)
                 
                 try:
                     grid = node.state.instance.get_grid_from_state(similar.state)
@@ -303,12 +303,12 @@ class NodeSet:
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
                     
-                    if not found or similar.cost + path.info["cost"] < found.cost:
-                        found = similar
+                    if not found[1] or similar.cost + path.info["cost"] < found[1].cost:
+                        found = (path.info["cost"], similar)
                 except search.SolutionNotFoundError:
                     continue
                 
-            if found: return found
+            if found[1]: return found
         
         raise IndexError()
 
@@ -624,7 +624,7 @@ def solve_bid(instance, search_strategy, instance2, search_strategy2):
     
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost, dist.get(solution[i]))
-        
+    
     return solution
 
 def main():

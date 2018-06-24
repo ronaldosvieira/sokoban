@@ -316,6 +316,24 @@ def search(instance, start, fringe, debug = False):
     
     raise SolutionNotFoundError(fringe)
 
+def build_bidirectional_solution(solutions, fringes):
+    left, right = solutions
+    
+    print("chosen:", left, right)
+    
+    right = right.pred
+        
+    while right:
+        neighbor = next(filter(lambda s: s[0] == right.state, left.state.get_neighbors()))
+        left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
+        
+        right = right.pred
+    
+    return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
+
+def combine_cost(result):
+    return result[0] + result[1].cost
+
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
     last_cost = [0, 0]
@@ -340,31 +358,21 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 print(sum(k))
                 
         if sum(last_cost) >= shortest:
-            left, right = sol
-            
-            right = right.pred
-                
-            while right:
-                neighbor = next(filter(lambda s: s[0] == right.state, left.state.get_neighbors()))
-                left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
-                
-                right = right.pred
-            
-            return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
+            return build_bidirectional_solution(sol, fringes)
         
-        if current not in fringe.visited or current.cost <= fringe.best_node[current].cost:
+        if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
             fringe.visited.add(current)
             fringe.best_node.add(current)
             
             if current in fringes[1 - direction].visited:
-                node = fringes[1].best_node[current]
-                current = fringes[0].best_node[current]
+                n1 = fringes[0].best_node[current][1]
+                n2 = fringes[1].best_node[current][1]
                 
-                combined_cost = current.cost + instance.dist(current.state, node.state) + node.cost
+                combined_cost = n1.cost + instance.dist(n1.state, n2.state) + n2.cost
                 
                 if combined_cost < shortest:
-                    shortest = current.cost + node.cost
-                    sol = (current, node)
+                    shortest = combined_cost
+                    sol = (n1, n2)
             
             instance.last_state = current.pred.state if current.pred else None
             
@@ -373,10 +381,8 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                                     current.cost + s[1], 
                                     current.depth + 1),
                                 current.state.get_neighbors())
-            successors = filter(lambda n: n not in fringe.best_node or n.cost < fringe.best_node[n].cost, successors)
+            successors = list(filter(lambda n: n not in fringe.best_node or n.cost < combine_cost(fringe.best_node[n]), successors))
             successors = list(successors)
-            
-            #print(list(map(str, successors)))
             
             for node in successors:
                 fringe.best_node.add(node)
@@ -384,5 +390,8 @@ def bidirectional_search(instances, starts, fringes, debug = False):
             fringe.extend(successors)
             
         direction = 1 - direction
+        
+    if sol[0] is not None and sol[1] is not None:
+        return build_bidirectional_solution(sol, fringes)
     
     raise SolutionNotFoundError(fringe)
