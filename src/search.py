@@ -68,6 +68,9 @@ class Fringe(object):
         
     def nodes(self):
         return self.nodes_generated
+        
+    def bidirectional_stopping_criteria(self, costs, shortest):
+        return False
 
 class BreadthFirstFringe(Fringe):
     def __init__(self):
@@ -117,6 +120,9 @@ class UniformCostFringe(Fringe):
         
         for node in nodes:
             heapq.heappush(self.open_list, (node.cost, node))
+            
+    def bidirectional_stopping_criteria(self, last_costs, shortest):
+        return sum(last_costs) > shortest
 
 class DepthFirstFringe(Fringe):
     def __init__(self):
@@ -210,6 +216,9 @@ class BestFirstFringe(Fringe):
         
         for node in nodes:
             heapq.heappush(self.open_list, (self.heuristic.get(node), node))
+            
+    def bidirectional_stopping_criteria(self, costs, shortest):
+        return any(map(lambda cost: cost > shortest, costs))
 
 class AStarFringe(Fringe):
     def __init__(self, heuristic):
@@ -240,6 +249,9 @@ class AStarFringe(Fringe):
         for node in nodes:
             h = self.heuristic.get(node)
             heapq.heappush(self.open_list, ((node.cost + h, h), node))
+            
+    def bidirectional_stopping_criteria(self, costs, shortest):
+        return any(map(lambda cost: cost > shortest, costs))
 
 def grid_search(instance, start, fringe, debug = False):
     k = -1
@@ -357,6 +369,7 @@ def bidirectional_search(instances, starts, fringes, debug = False):
                 
         last_cost[direction] = max(last_cost[direction], current.cost)
         
+        if fringe.bidirectional_stopping_criteria(last_cost, shortest):
             return build_bidirectional_solution(sol, fringes)
         
         if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
