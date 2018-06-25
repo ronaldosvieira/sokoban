@@ -245,6 +245,7 @@ class UnplacedBoxes(YStrategy):
 class NodeSet:
     def __init__(self):
         self.nodes = defaultdict(list)
+        self.count = 0
         
     def _get_hash(self, node):
         return tuple((x, y) for x, y in sorted(sorted(node.state.boxes, key=itemgetter(1)), key=itemgetter(0)))
@@ -257,7 +258,7 @@ class NodeSet:
             return False
     
     def __len__(self):
-        return len(self.nodes)
+        return self.count
     
     def add(self, node):
         state_hash = self._get_hash(node)
@@ -275,9 +276,12 @@ class NodeSet:
                             path_search_start,
                             search.AStarFringe(ManhattanDistanceHeuristic(similar.state.player)))
                 
+                    return self.nodes[state_hash].append(node)
                 except search.SolutionNotFoundError:
                     continue
                 
+        self.count += 1
+        
         return self.nodes[state_hash].append(node)
 
     def update(self, node_list):
