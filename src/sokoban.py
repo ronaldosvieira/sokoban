@@ -321,7 +321,10 @@ class NodeSet:
         raise IndexError()
 
     def union(self, other):
-        return set(self.nodes.keys()).union(set(other.nodes.keys()))
+        for node in other.nodes:
+            self.add(node)
+        
+        return self
 
 class BreadthFirstSokobanFringe(BreadthFirstFringe):
     def __init__(self):
