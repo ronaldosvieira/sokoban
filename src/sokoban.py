@@ -320,12 +320,6 @@ class NodeSet:
         
         raise IndexError()
 
-    def union(self, other):
-        for node in other.nodes:
-            self.add(node)
-        
-        return self
-
 class BreadthFirstSokobanFringe(BreadthFirstFringe):
     def __init__(self):
         super().__init__()
@@ -685,8 +679,8 @@ def main():
     
         print("solution length:", len(solution))
         print("solution cost:", solution.info["cost"])
-        print(len(solution.info["nodes_expanded"]), "nodes expanded")
-        print(len(solution.info["nodes_generated"]), "nodes generated")
+        print(solution.info["nodes_expanded"], "nodes expanded")
+        print(solution.info["nodes_generated"], "nodes generated")
         print("time elapsed: %g" % (end_time - start_time))
     except search.SolutionNotFoundError as e:
         print("no solution")

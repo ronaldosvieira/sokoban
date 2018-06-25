@@ -18,9 +18,11 @@ class Node:
         return "<%s %g>" % (str(self.state), self.cost)
 
 class Solution:
-    def __init__(self, goal, generated, visited):
+    def __init__(self, goal, fringe, generated, visited):
         self.steps = []
         self.info = {}
+        
+        self.fringe = fringe
         
         self.info["nodes_generated"] = generated
         self.info["nodes_expanded"] = visited
@@ -280,7 +282,7 @@ def grid_search(instance, start, fringe, debug = False):
                 print(k)
         
         if instance.is_goal(current.state):
-            return Solution(current, fringe, fringe.visited)
+            return Solution(current, fringe, len(fringe.nodes_generated), len(fringe.visited))
             
         if current.state not in fringe.visited or current.cost <= fringe.best_cost[current.state]:
             fringe.visited.add(current.state)
@@ -321,7 +323,7 @@ def search(instance, start, fringe, debug = False):
                 print(k)
         
         if instance.is_goal(current.state):
-            return Solution(current, fringe.nodes_generated, fringe.visited)
+            return Solution(current, fringe, len(fringe.nodes_generated), len(fringe.visited))
         
         if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
             fringe.visited.add(current)
@@ -357,7 +359,9 @@ def build_bidirectional_solution(solutions, fringes):
         
         right = right.pred
     
-    return Solution(left, fringes[0].nodes_generated.union(fringes[1].nodes_generated), fringes[0].visited.union(fringes[1].visited))
+    return Solution(left, fringes, 
+        sum(map(lambda f: len(f.nodes_generated), fringes)), 
+        sum(map(lambda f: len(f.visited), fringes)))
 
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
