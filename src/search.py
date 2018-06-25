@@ -379,6 +379,61 @@ def bidirectional_search(instances, starts, fringes, debug = False):
 
         top_costs[direction] = max(top_costs[direction], fringe.top_cost())
         
+        current = fringe.pop()
+        
+        if debug:
+            if current.cost > k[direction]:
+                k[direction] = current.cost
+                print(sum(k))
+        
+        if current not in fringe.visited or current.cost <= combine_cost(fringe.best_node[current]):
+            fringe.visited.add(current)
+            fringe.best_node.add(current)
+            
+            instance.last_state = current.pred.state if current.pred else None
+            
+            if current in fringes[1 - direction].visited:
+                n1 = fringes[0].best_node[current][1] if direction == 1 else current
+                n2 = fringes[1].best_node[current][1] if direction == 0 else current
+                
+                return build_bidirectional_solution((n1, n2), fringes)
+            else:
+                successors = map(lambda s: Node(s[0], 
+                                        current, 
+                                        current.cost + s[1], 
+                                        current.depth + 1),
+                                    current.state.get_neighbors())
+                successors = list(filter(lambda n: n not in fringe.best_node or n.cost < combine_cost(fringe.best_node[n]), successors))
+                successors = list(successors)
+                
+                for node in successors:
+                    fringe.best_node.add(node)
+                    
+                fringe.extend(successors)
+            
+        direction = 1 - direction
+        
+    if sol[0] is not None and sol[1] is not None:
+        return build_bidirectional_solution(sol, fringes)
+    
+    raise SolutionNotFoundError(fringe)
+    
+def bidirectional_opt_search(instances, starts, fringes, debug = False):
+    k = [0, 0]
+    top_costs = [0, 0]
+    direction = 0
+    
+    shortest = float("inf")
+    sol = (None, None)
+    
+    for i in [0, 1]:
+        fringes[i].init([Node(starts[i])])
+    
+    while all(fringes):
+        instance, fringe = instances[direction], fringes[direction]
+
+        top_costs[direction] = max(top_costs[direction], fringe.top_cost())
+        
         if fringe.bidirectional_stopping_criteria(top_costs, shortest):
             return build_bidirectional_solution(sol, fringes)
         

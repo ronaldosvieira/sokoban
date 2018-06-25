@@ -589,9 +589,7 @@ class ReversedGameInstance(GameInstance):
         
         return neighbors
 
-def solve_uni(instance, search_strategy):
-    solution = search.search(instance, instance.start, search_strategy)
-    
+def print_soln_uni(instance, solution):
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost)
     
@@ -610,17 +608,11 @@ def solve_uni(instance, search_strategy):
     
     return solution
 
-def solve_bid(instance, search_strategy, instance2, search_strategy2):
-    solution = search.bidirectional_search([instance, instance2], 
-                [instance.start, instance2.start], 
-                [search_strategy, search_strategy2])
-    
+def print_soln_bid(instance, instance2, solution):
     dist = MinMatchingActualPlayerPath(instance.goal)
     
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost, dist.get(solution[i]))
-    
-    return solution
 
 def main():
     raw_data = sys.argv
@@ -663,12 +655,41 @@ def main():
         start_time = time.time()
         
         if algorithm == 'baseline':
-            solution = solve_uni(instance2, BreadthFirstSokobanFringe())
-        elif algorithm == 'proposed':
-            solution = solution = solve_bid(instance, 
-                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)), 
-                instance2, 
-                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)))
+            search_strategy = BreadthFirstSokobanFringe()
+            
+            solution = search.search(instance2, instance2.start, search_strategy)
+            
+            print_soln_uni(instance2, solution)
+        elif algorithm == 'proposed1':
+            search_strategy = [
+                AStarSokobanFringe(MinMatchingPlayer(instance.goal)),
+                AStarSokobanFringe(MinMatchingPlayer(instance.goal))
+            ]
+            
+            solution = search.bidirectional_search([instance, instance2], 
+                [instance.start, instance2.start], search_strategy)
+                
+            print_soln_bid(instance, instance2, solution)
+        elif algorithm == 'proposed2':
+            search_strategy = [
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)),
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal))
+            ]
+            
+            solution = search.bidirectional_search([instance, instance2], 
+                [instance.start, instance2.start], search_strategy)
+                
+            print_soln_bid(instance, instance2, solution)
+        elif algorithm == 'proposed2*':
+            search_strategy = [
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)),
+                AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal))
+            ]
+            
+            solution = search.bidirectional_opt_search([instance, instance2], 
+                [instance.start, instance2.start], search_strategy)
+                
+            print_soln_bid(instance, instance2, solution)
         else:
             print("invalid algorithm")
             sys.exit(1)
