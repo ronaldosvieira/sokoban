@@ -172,10 +172,8 @@ class XStrategy:
         self.y_strategy = y_strategy
         self.goals = set()
         
-        for y in range(0, len(self.instance.reversed_grid)):
-            for x in range(0, len(self.instance.reversed_grid[y])):
-                if self.instance.reversed_grid[y][x] in set(['.', 'B', 'O']):
-                    self.goals.add((x, y))
+        for box in self.instance.goal.boxes:
+            self.goals.add(box)
 
 class YStrategy:
     def __init__(self, goal):
