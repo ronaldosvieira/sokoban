@@ -592,7 +592,7 @@ class ReversedGameInstance(GameInstance):
         return neighbors
 
 def solve_uni(instance, search_strategy):
-    solution = search.search(instance, instance.start, search_strategy, True)
+    solution = search.search(instance, instance.start, search_strategy)
     
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost)
@@ -615,7 +615,7 @@ def solve_uni(instance, search_strategy):
 def solve_bid(instance, search_strategy, instance2, search_strategy2):
     solution = search.bidirectional_search([instance, instance2], 
                 [instance.start, instance2.start], 
-                [search_strategy, search_strategy2], True)
+                [search_strategy, search_strategy2])
     
     dist = MinMatchingActualPlayerPath(instance.goal)
     
