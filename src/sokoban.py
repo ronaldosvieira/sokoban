@@ -662,6 +662,16 @@ def main():
             print_soln_uni(instance2, solution)
         elif algorithm == 'proposed1':
             search_strategy = [
+                UniformCostSokobanFringe(),
+                UniformCostSokobanFringe()
+            ]
+            
+            solution = search.bidirectional_search([instance, instance2], 
+                [instance.start, instance2.start], search_strategy)
+                
+            print_soln_bid(instance, instance2, solution)
+        elif algorithm == 'proposed2':
+            search_strategy = [
                 AStarSokobanFringe(MinMatchingPlayer(instance.goal)),
                 AStarSokobanFringe(MinMatchingPlayer(instance.goal))
             ]
@@ -670,7 +680,7 @@ def main():
                 [instance.start, instance2.start], search_strategy)
                 
             print_soln_bid(instance, instance2, solution)
-        elif algorithm == 'proposed2':
+        elif algorithm == 'proposed3':
             search_strategy = [
                 AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)),
                 AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal))
@@ -680,7 +690,7 @@ def main():
                 [instance.start, instance2.start], search_strategy)
                 
             print_soln_bid(instance, instance2, solution)
-        elif algorithm == 'proposed2*':
+        elif algorithm == 'proposed3*':
             search_strategy = [
                 AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal)),
                 AStarSokobanFringe(MinMatchingActualPlayerPath(instance.goal))
