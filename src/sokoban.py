@@ -710,7 +710,7 @@ def main():
             
         end_time = time.time()
     
-        print("solution length:", len(solution))
+        print("solution length:", solution.info["length"])
         print("solution cost:", solution.info["cost"])
         print(solution.info["nodes_expanded"], "nodes expanded")
         print(solution.info["nodes_generated"], "nodes generated")

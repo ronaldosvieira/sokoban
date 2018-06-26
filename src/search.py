@@ -18,7 +18,7 @@ class Node:
         return "<%s %g>" % (str(self.state), self.cost)
 
 class Solution:
-    def __init__(self, goal, fringe, generated, visited):
+    def __init__(self, goal, fringe, generated, visited, length = None):
         self.steps = []
         self.info = {}
         
@@ -28,6 +28,7 @@ class Solution:
         self.info["nodes_expanded"] = visited
         self.info["depth"] = goal.depth
         self.info["cost"] = goal.cost
+        self.info["length"] = length if length is not None else goal.depth
         i = goal
         
         while i:
@@ -348,6 +349,7 @@ def search(instance, start, fringe, debug = False):
 
 def build_bidirectional_solution(solutions, fringes):
     left, right = solutions
+    length = (left.depth, right.depth)
     
     right = right.pred
         
@@ -359,7 +361,8 @@ def build_bidirectional_solution(solutions, fringes):
     
     return Solution(left, fringes, 
         sum(map(lambda f: len(f.nodes_generated), fringes)), 
-        sum(map(lambda f: len(f.visited), fringes)))
+        sum(map(lambda f: len(f.visited), fringes)),
+        length)
 
 def bidirectional_search(instances, starts, fringes, debug = False):
     k = [0, 0]
