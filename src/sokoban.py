@@ -592,10 +592,9 @@ class ReversedGameInstance(GameInstance):
         return neighbors
 
 def print_soln_uni(instance, solution):
-    if not DEBUG: return
-
-    for i in range(0, len(solution)):
-        print(solution[i].state, solution[i].cost)
+    if DEBUG:
+        for i in range(0, len(solution)):
+            print(solution[i].state, solution[i].cost)
     
     current_grid = instance.get_grid_from_state(instance.goal)
     
@@ -608,7 +607,8 @@ def print_soln_uni(instance, solution):
     
     solution.info["cost"] += path_to_start.info["cost"]
     
-    print(instance.goal, solution.info["cost"])
+    if DEBUG:
+        print(instance.goal, solution.info["cost"])
 
 def print_soln_bid(instance, instance2, solution):
     if not DEBUG: return
