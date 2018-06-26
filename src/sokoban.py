@@ -618,26 +618,7 @@ def print_soln_bid(instance, instance2, solution):
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost, dist.get(solution[i]))
 
-def main():
-    raw_data = sys.argv
-    
-    if len(raw_data) not in (4, 5):
-        print("usage: %s instance algorithm strategy parameter?" % raw_data[0])
-        sys.exit(1)
-    
-    instance, algorithm, strategy = raw_data[1:4]
-    
-    try:
-        parameter = raw_data[4]
-    except:
-        parameter = None
-    
-    with open(instance, 'r') as file:
-        data = file.readlines()
-        
-    width, height = list(map(int, data[0].split()))
-    grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
-    
+def solve(width, height, grid, instance, algorithm, strategy, parameter):
     if strategy == 'x1y1':
         instance = GameInstance(width, height, grid, AfterEachStep, AllBoxes)
         instance2 = ReversedGameInstance(width, height, grid, AfterEachStep, AllBoxes)
@@ -645,7 +626,7 @@ def main():
         instance = GameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
         instance2 = ReversedGameInstance(width, height, grid, UntilPlaced, UnplacedBoxes)
     elif strategy == 'x4y2':
-        if parameter:
+        if parameter is not None:
             instance = GameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
             instance2 = ReversedGameInstance(width, height, grid, until_k_steps_away(int(parameter)), UnplacedBoxes)
         else:
@@ -656,8 +637,6 @@ def main():
         sys.exit(1)
         
     try:
-        start_time = time.time()
-        
         if algorithm == 'baseline':
             search_strategy = BreadthFirstSokobanFringe()
             
@@ -707,6 +686,42 @@ def main():
         else:
             print("invalid algorithm")
             sys.exit(1)
+            
+        return solution
+    except search.SolutionNotFoundError as e:
+        if strategy == 'x4y2' and parameter < width + height:
+            solution = solve(width, height, grid, instance, algorithm, strategy, parameter + 1)
+            
+            print("k =", parameter + 1)
+            
+            return solution
+        else:
+            raise e
+
+def main():
+    raw_data = sys.argv
+    
+    if len(raw_data) not in (4, 5):
+        print("usage: %s instance algorithm strategy parameter?" % raw_data[0])
+        sys.exit(1)
+    
+    instance, algorithm, strategy = raw_data[1:4]
+    
+    try:
+        parameter = raw_data[4]
+    except:
+        parameter = 0
+    
+    with open(instance, 'r') as file:
+        data = file.readlines()
+        
+    width, height = list(map(int, data[0].split()))
+    grid = list(map(lambda l: list(l.rstrip('\n')), data[1:]))
+
+    try:
+        start_time = time.time()
+  
+        solution = solve(width, height, grid, instance, algorithm, strategy, parameter)
             
         end_time = time.time()
     
