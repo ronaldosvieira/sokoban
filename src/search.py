@@ -349,8 +349,6 @@ def search(instance, start, fringe, debug = False):
 def build_bidirectional_solution(solutions, fringes):
     left, right = solutions
     
-    print("chosen:", left, right)
-    
     right = right.pred
         
     while right:
