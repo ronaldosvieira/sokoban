@@ -350,11 +350,13 @@ def search(instance, start, fringe, debug = False):
 def build_bidirectional_solution(solutions, fringes):
     left, right = solutions
     length = (left.depth, right.depth)
+    instance = left.state.instance
     
     right = right.pred
         
     while right:
-        neighbor = next(filter(lambda s: s[0] == right.state, left.instance.get_neighbors(left, True)))
+        neighbors = instance.generate_neighbors(left.state, True)
+        neighbor = next(filter(lambda s: s[0] == right.state, neighbors))
         left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
         
         right = right.pred
