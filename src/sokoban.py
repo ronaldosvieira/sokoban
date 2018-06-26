@@ -471,11 +471,15 @@ class GameInstance:
         except IndexError:
             return True
     
-    def generate_neighbors(self, state):
+    def generate_neighbors(self, state, ignore_strategy = False):
         neighbors = []
         
         current_grid = self.get_grid_from_state(state)
-        available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
+        
+        if not ignore_strategy:
+            available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
+        else:
+            available_boxes = state.boxes
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
@@ -546,11 +550,15 @@ class ReversedGameInstance(GameInstance):
         
         self.boxes_to_consider = x_strategy(self, y_strategy(self.goal))
         
-    def generate_neighbors(self, state):
+    def generate_neighbors(self, state, ignore_strategy = False):
         neighbors = []
         
         current_grid = self.get_grid_from_state(state)
-        available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
+        
+        if not ignore_strategy:
+            available_boxes = self.boxes_to_consider.get(self.last_state, state, current_grid)
+        else:
+            available_boxes = state.boxes
         
         for x, y in available_boxes:
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:

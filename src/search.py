@@ -354,7 +354,7 @@ def build_bidirectional_solution(solutions, fringes):
     right = right.pred
         
     while right:
-        neighbor = next(filter(lambda s: s[0] == right.state, left.state.get_neighbors()))
+        neighbor = next(filter(lambda s: s[0] == right.state, left.instance.get_neighbors(left, True)))
         left = Node(neighbor[0], left, left.cost + neighbor[1], left.depth + 1)
         
         right = right.pred
