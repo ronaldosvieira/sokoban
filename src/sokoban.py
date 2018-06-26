@@ -7,6 +7,8 @@ BreadthFirstFringe = search.BreadthFirstFringe
 UniformCostFringe = search.UniformCostFringe
 AStarFringe = search.AStarFringe
 
+DEBUG = False
+
 class GridSearchState:
     def __init__(self, instance, x, y):
         self.instance = instance
@@ -590,6 +592,8 @@ class ReversedGameInstance(GameInstance):
         return neighbors
 
 def print_soln_uni(instance, solution):
+    if not DEBUG: return
+
     for i in range(0, len(solution)):
         print(solution[i].state, solution[i].cost)
     
@@ -605,10 +609,10 @@ def print_soln_uni(instance, solution):
     solution.info["cost"] += path_to_start.info["cost"]
     
     print(instance.goal, solution.info["cost"])
-    
-    return solution
 
 def print_soln_bid(instance, instance2, solution):
+    if not DEBUG: return
+
     dist = MinMatchingActualPlayerPath(instance.goal)
     
     for i in range(0, len(solution)):
